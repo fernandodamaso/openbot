@@ -3,6 +3,7 @@ import { For, Match, Show, Switch } from "solid-js";
 import { useText } from "../../text";
 import { SidebarAgentRow } from "./SidebarAgentRow";
 import { SidebarChannelRow } from "./SidebarChannelRow";
+import { SidebarFolderPeek } from "./SidebarFolderPeek";
 import { SidebarSectionDraft } from "./SidebarSectionEditor";
 import { SidebarSectionHeader } from "./SidebarSectionHeader";
 import { useSidebarScope } from "./sidebar-scope";
@@ -72,6 +73,9 @@ export function SidebarAgentSection(sectionProps: { sectionId: string; depth: nu
             </Show>
           </div>
         </div>
+        <Show when={collapsed()}>
+          <SidebarFolderPeek sectionId={sectionId()} />
+        </Show>
       </section>
     </Show>
   );
