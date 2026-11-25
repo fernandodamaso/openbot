@@ -143,7 +143,9 @@ export function supportsInstalledUpdates(
   platform: NodeJS.Platform,
   environment: NodeJS.ProcessEnv = process.env,
 ): boolean {
-  if (platform === "linux") return Boolean(environment.APPIMAGE?.trim());
+  // Fork: Linux builds are updated by openbot-fork-update, never by upstream releases.
+  if (platform === "linux")
+    return Boolean(environment.APPIMAGE?.trim()) && environment.OPENBOT_FORK_SELF_UPDATE === "1";
   return platform === "darwin" || platform === "win32";
 }
 
