@@ -100,6 +100,7 @@ function ThreadRow(props: {
   onOpen: () => void;
 }) {
   const { format } = useText();
+  const preview = () => props.model.preview?.(props.agentId, props.thread.id);
   return (
     <ThreadRowItem
       model={props.model}
@@ -111,6 +112,7 @@ function ThreadRow(props: {
       <Button
         variant="ghost"
         class="sidebar-thread-row"
+        data-preview={preview() ? "" : undefined}
         aria-current={props.current ? "page" : undefined}
         onClick={props.onOpen}
       >
@@ -120,6 +122,13 @@ function ThreadRow(props: {
         <ThreadTitle class="sidebar-thread-title" title={props.thread.title} />
         <ThreadStatusText status={props.thread.status} unread={props.thread.unread} />
         <span class="sidebar-thread-time">{sidebarMessageTime(props.thread.updatedAt, format)}</span>
+        <Show when={preview()}>
+          {(text) => (
+            <span class="sidebar-thread-preview" dir="auto">
+              {text()}
+            </span>
+          )}
+        </Show>
       </Button>
     </ThreadRowItem>
   );

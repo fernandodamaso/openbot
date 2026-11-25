@@ -11,6 +11,7 @@ import { useAgentTasks } from "./features/agent-tasks/agent-tasks-context";
 import { useAgentThreads } from "./features/agent-threads/agent-threads-context";
 import type { ThreadWaits } from "./features/agent-threads/conversation-threads";
 import { sidebarAgentThreads } from "./features/agent-threads/sidebar-agent-threads";
+import { cachedThreadPreview } from "./features/agent-threads/thread-previews";
 import { createAgentActivity } from "./features/agents/agent-activity";
 import { useAgents } from "./features/agents/agents-context";
 import { useNavigation } from "./navigation";
@@ -57,7 +58,28 @@ export function useGlobalSearchAttention() {
     }),
   );
 
-  return createMemo<GlobalSearchAction[]>(() => {
+  // Fork: every thread of the visible agents, searchable from Ctrl+K by title, agent name and latest message
+  const threadActions = createMemo<GlobalSearchAction[]>(() => {
+    const model = threads();
+    const hidden = userHiddenAgentIds();
+    return agentList().flatMap((agent) =>
+      hidden.has(agent.id)
+        ? []
+        : (model?.threads(agent.id) ?? []).map(
+            (thread): GlobalSearchAction => ({
+              id: `thread:${agent.id}:${thread.id}`,
+              label: thread.title,
+              detail: agent.name,
+              keywords: cachedThreadPreview(thread.id) ?? "",
+              group: "threads",
+              icon: Split,
+              run: () => void selectAgent(agent.id, thread.id),
+            }),
+          ),
+    );
+  });
+
+  const attention = createMemo<GlobalSearchAction[]>(() => {
     const ranked: { rank: number; action: GlobalSearchAction }[] = [];
     const model = threads();
     const hidden = userHiddenAgentIds();
@@ -104,4 +126,6 @@ export function useGlobalSearchAttention() {
     }
     return ranked.sort((left, right) => left.rank - right.rank).map((entry) => entry.action);
   });
+
+  return () => [...attention(), ...threadActions()];
 }

@@ -137,6 +137,8 @@ export interface SidebarAgentThreads {
   onNew?: ((agentId: string) => void) | undefined;
   onArchive?: ((agentId: string, threadId: string) => void) | undefined;
   onDelete?: ((agentId: string, threadId: string) => void) | undefined;
+  // Fork: latest message of a thread, for the second line of its row
+  preview?: ((agentId: string, threadId: string) => string | undefined) | undefined;
 }
 
 export interface SidebarChatHistory {

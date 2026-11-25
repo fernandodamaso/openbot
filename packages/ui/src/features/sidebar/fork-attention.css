@@ -42,3 +42,32 @@
 :is(.agent-row-agent-status.agent-row-agent-status-unread, .channel-avatar-count.channel-avatar-count)::before {
   filter: hue-rotate(-55deg) brightness(0.95) saturate(2.2) contrast(1.05);
 }
+
+/* Fork: two-line thread rows. The latest message goes on a second line under the title, so threads
+   are easy to tell apart. Grid placement keeps upstream's markup: icon, title, status, time, preview. */
+.sidebar-thread-row.ui-button[data-preview] {
+  display: grid;
+  height: auto;
+  min-height: 30px;
+  align-items: center;
+  column-gap: var(--openbot-space-2);
+  grid-template-columns: 16px minmax(0, 1fr) auto auto;
+  padding-block: 5px;
+  row-gap: 1px;
+}
+
+.sidebar-thread-row[data-preview] .sidebar-thread-icon {
+  align-self: start;
+  padding-top: 2px;
+}
+
+.sidebar-thread-preview {
+  overflow: hidden;
+  min-width: 0;
+  color: var(--openbot-text-muted);
+  font-size: var(--openbot-text-sm);
+  grid-column: 2 / -1;
+  grid-row: 2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

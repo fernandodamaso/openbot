@@ -42,7 +42,7 @@ import { playDialogExit, trackResultHighlight, trackResultsHeight } from "./glob
 import { matchParts, normalizedSearchText, snippetAround } from "./global-search-text";
 import { VirtualListbox, type VirtualRowProps } from "./VirtualListbox";
 
-const SEARCH_TABS = ["all", "agents", "channels", "messages", "files", "routines"] as const;
+const SEARCH_TABS = ["all", "agents", "threads", "channels", "messages", "files", "routines"] as const;
 type SearchTab = (typeof SEARCH_TABS)[number];
 
 export interface GlobalSearchChannel {
@@ -69,7 +69,7 @@ export interface GlobalSearchRoutine {
 export interface GlobalSearchAction {
   id: string;
   label: string;
-  group: "actions" | "settings" | "attention";
+  group: "actions" | "settings" | "attention" | "threads";
   icon: typeof Settings;
   detail?: string | undefined;
   keywords?: string;
@@ -86,7 +86,16 @@ type ResultData = AgentResult | ChannelResult | MessageResult | FileResult | Rou
 type Option = { key: string; label: string; text: string };
 type GlobalSearchResult = ResultData & Option;
 
-type SectionKey = "agents" | "channels" | "messages" | "files" | "routines" | "actions" | "settings" | "attention";
+type SectionKey =
+  | "agents"
+  | "channels"
+  | "messages"
+  | "files"
+  | "routines"
+  | "actions"
+  | "settings"
+  | "attention"
+  | "threads";
 
 interface GlobalSearchSection {
   key: SectionKey;
@@ -129,6 +138,7 @@ const SPACED_SECTION_HEIGHT = 34;
 const TAB_LABEL = {
   all: "conversation.globalSearch.tab.all",
   agents: "conversation.globalSearch.tab.agents",
+  threads: "conversation.tasks.title",
   channels: "conversation.globalSearch.tab.channels",
   messages: "conversation.globalSearch.tab.messages",
   files: "conversation.globalSearch.tab.files",
@@ -144,6 +154,7 @@ const SECTION_LABEL = {
   actions: "conversation.globalSearch.section.actions",
   settings: "conversation.globalSearch.section.settings",
   attention: "sidebar.waiting.title",
+  threads: "conversation.tasks.title",
 } as const satisfies Record<SectionKey, AppTextKey>;
 
 function isSearchTab(value: string): value is SearchTab {
@@ -659,6 +670,14 @@ export function GlobalSearch(props: GlobalSearchProps) {
     });
     let groups: GlobalSearchSection[];
     if (category === "agents") groups = list("agents", matchingAgents(agentItems(), value));
+    else if (category === "threads")
+      groups = list(
+        "threads",
+        matching(
+          actionItems().filter((result) => result.action.group === "threads"),
+          value,
+        ),
+      );
     else if (category === "channels") groups = list("channels", matching(channelItems(), value));
     else if (category === "messages")
       groups = [section("messages", value ? matching(messageItems(), value) : [], remote(messageSearch))];
@@ -679,6 +698,11 @@ export function GlobalSearch(props: GlobalSearchProps) {
       const preview = { limit: ALL_SECTION_LIMIT };
       groups = [
         section("agents", matchingAgents(agentItems(), value), preview),
+        section(
+          "threads",
+          actions.filter((result) => result.action.group === "threads"),
+          preview,
+        ),
         section("channels", matching(channelItems(), value), preview),
         section("messages", matching(messageItems(), value), remote(messageSearch, ALL_SECTION_LIMIT)),
         section("files", matching(fileItems(), value), remote(fileSearch, ALL_SECTION_LIMIT)),

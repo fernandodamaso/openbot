@@ -4,6 +4,7 @@ import type { SidebarAgentThreads } from "@openbot/ui/features/sidebar/sidebar-t
 import type { AgentTasks } from "../agent-tasks/agent-tasks-state";
 import type { AgentThreadTabsState } from "./agent-thread-tabs";
 import { type ThreadWaits, taskWaitsFor } from "./conversation-threads";
+import { threadPreview } from "./thread-previews";
 
 export interface SidebarAgentThreadsInput {
   tasks: AgentTasks;
@@ -43,5 +44,9 @@ export function sidebarAgentThreads(input: SidebarAgentThreadsInput): SidebarAge
     onNew: input.onNew,
     onArchive: (agentId, threadId) => void tabs.archive(agentId, threadId),
     onDelete: editable ? (agentId, threadId) => void tabs.remove(agentId, threadId) : undefined,
+    preview: (agentId, threadId) => {
+      const task = tasks.snapshot(agentId)?.tasks.find((item) => item.id === threadId);
+      return task ? threadPreview(tasks.readTask, agentId, task.id, task.updatedAt) : undefined;
+    },
   };
 }

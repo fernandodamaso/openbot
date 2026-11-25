@@ -898,6 +898,8 @@ export function createAgentTasks(options: AgentTasksOptions) {
   }
 
   return {
+    // Fork: lets the sidebar read a thread's latest message for its preview line
+    readTask: (input: Parameters<AgentTasksPort["readTask"]>[0]) => port().readTask(input),
     available,
     editable,
     queuedMessageMovable,
