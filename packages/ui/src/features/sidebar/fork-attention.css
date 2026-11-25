@@ -28,3 +28,10 @@
     translate: 0 0;
   }
 }
+
+/* Fork: unread count badge in the app accent colour (matches the folder unread count) instead of plum. */
+.agent-row-agent-status-unread {
+  --sidebar-felt-under: linear-gradient(to bottom, var(--openbot-accent-hover), var(--openbot-accent));
+
+  color: var(--openbot-text-on-accent);
+}
