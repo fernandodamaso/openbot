@@ -32,7 +32,7 @@ function threadRank(thread: ThreadItem): 0 | 1 | 2 | undefined {
 
 export function useGlobalSearchAttention() {
   const { t, format } = useText();
-  const { agentList } = useAgents();
+  const { agentList, userHiddenAgentIds } = useAgents();
   const { selectAgent } = useNavigation();
   const { pendingPrompts, approvals } = useTurns();
   const agentTasks = useAgentTasks();
@@ -60,7 +60,9 @@ export function useGlobalSearchAttention() {
   return createMemo<GlobalSearchAction[]>(() => {
     const ranked: { rank: number; action: GlobalSearchAction }[] = [];
     const model = threads();
+    const hidden = userHiddenAgentIds();
     for (const agent of agentList()) {
+      if (hidden.has(agent.id)) continue;
       const agentThreadList = model?.threads(agent.id) ?? [];
       for (const thread of agentThreadList) {
         const rank = threadRank(thread);
