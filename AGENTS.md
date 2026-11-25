@@ -13,6 +13,9 @@ the fork rules win. The full guide for people is `FORK.md`.
   upstream release.
 - Keep the difference from upstream small. Change as few upstream lines as you can. Do not reformat,
   rename or move upstream files. Prefer new files over large edits to upstream files.
+- A new file under `packages/ui` that other code imports also needs an entry in the `exports` map of
+  `packages/ui/package.json`. Typechecks don't catch a missing entry; `bun run build` does, so run it
+  before committing.
 - **Non-negotiable:** keep the line with `OPENBOT_FORK_SELF_UPDATE` in `src/main/update-service.ts`.
   Without it, the installed app replaces itself with the upstream build and loses the fork's
   changes. The update script refuses to install a build without it.
