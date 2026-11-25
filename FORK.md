@@ -11,13 +11,26 @@ UI/UX changes. It is licensed under the same PolyForm Noncommercial 1.0.0 terms 
 
 ## Updates
 
-`/home/admin/.local/bin/openbot-fork-update` runs from the `openbot-fork-update.timer` user timer.
-When upstream publishes a new release, it merges the release tag into `custom`. Then it builds the
-AppImage and installs it as `/home/admin/Applications/OpenBot.AppImage`, keeping the previous build
-as `OpenBot.prev.AppImage`. A merge conflict or a failed build goes to an agent to fix. The script
-then verifies the result itself before it installs anything. The built app's own self-updater is
-turned off on Linux (`src/main/update-service.ts`), so it can't replace itself with an upstream
-build.
+`/home/admin/.local/bin/openbot-fork-update` runs from the `openbot-fork-update.timer` user timer
+every 3 hours. When upstream publishes a new release, it works in its own worktree
+(`/home/admin/SSD/build/openbot-update`), never in this checkout:
+
+1. It merges the release tag into a copy of `custom`.
+2. A merge conflict or a failed build goes to an agent: `claude` by default, or set
+   `OPENBOT_FORK_AGENT=codex|none`.
+3. The script then checks the result itself. Your commits must still be there, the updater gate
+   must be intact, and the tree must be clean. Then it runs the typecheck and the build.
+4. Only if everything passes, it installs the AppImage as `/home/admin/Applications/OpenBot.AppImage`
+   and keeps the previous one as `OpenBot.prev.AppImage`.
+5. It fast-forwards `custom` and pushes it to GitHub.
+
+If the update fails, `custom` and the installed app are left as they were. The attempt is kept on a
+`fork-update-failed/*` branch, and you get a notification. Logs are in
+`/home/admin/.local/state/openbot-fork/logs/`.
+
+The built app's own self-updater is turned off on Linux (`src/main/update-service.ts`), so it
+can't replace itself with an upstream build. Note that `OpenBot.prev.AppImage` may refuse to open
+your data after an update that changed the database schema.
 
 ## Keeping updates painless
 
