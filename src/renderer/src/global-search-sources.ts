@@ -23,6 +23,7 @@ import { useServers } from "./features/servers/servers-context";
 import { useSettings } from "./features/settings/settings-context";
 import { navItems, settingsTabShown } from "./features/settings/settings-tabs";
 import { useUsage } from "./features/usage/usage-context";
+import { useGlobalSearchAttention } from "./global-search-attention";
 import { useNavigation } from "./navigation";
 import { usePlatform } from "./platform";
 
@@ -38,6 +39,7 @@ export function useGlobalSearchSources(open: () => boolean) {
   const { openServerSettings } = useServerSettings();
   const { openAppSettings, setSkillsMarketplaceOpen } = useSettings();
   const { openSchedule } = useUsage();
+  const attention = useGlobalSearchAttention();
   const [routines, setRoutines] = createSignal<GlobalSearchRoutine[]>([]);
   const [routinesLoading, setRoutinesLoading] = createSignal(false);
   let routineRequest = 0;
@@ -245,7 +247,7 @@ export function useGlobalSearchSources(open: () => boolean) {
     channels: searchChannels,
     routines,
     routinesLoading,
-    actions,
+    actions: () => [...attention(), ...actions()],
     searchFiles: () => (filesSearchable() ? searchFiles : undefined),
     openChannel: (channelId: string) => void channels.open(channelId),
     selectRoutine,

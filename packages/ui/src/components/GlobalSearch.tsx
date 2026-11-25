@@ -69,7 +69,7 @@ export interface GlobalSearchRoutine {
 export interface GlobalSearchAction {
   id: string;
   label: string;
-  group: "actions" | "settings";
+  group: "actions" | "settings" | "attention";
   icon: typeof Settings;
   detail?: string | undefined;
   keywords?: string;
@@ -86,7 +86,7 @@ type ResultData = AgentResult | ChannelResult | MessageResult | FileResult | Rou
 type Option = { key: string; label: string; text: string };
 type GlobalSearchResult = ResultData & Option;
 
-type SectionKey = "agents" | "channels" | "messages" | "files" | "routines" | "actions" | "settings";
+type SectionKey = "agents" | "channels" | "messages" | "files" | "routines" | "actions" | "settings" | "attention";
 
 interface GlobalSearchSection {
   key: SectionKey;
@@ -143,6 +143,7 @@ const SECTION_LABEL = {
   routines: "conversation.globalSearch.tab.routines",
   actions: "conversation.globalSearch.section.actions",
   settings: "conversation.globalSearch.section.settings",
+  attention: "sidebar.waiting.title",
 } as const satisfies Record<SectionKey, AppTextKey>;
 
 function isSearchTab(value: string): value is SearchTab {
@@ -664,7 +665,15 @@ export function GlobalSearch(props: GlobalSearchProps) {
     else if (category === "files") groups = [section("files", matching(fileItems(), value), remote(fileSearch))];
     else if (category === "routines") groups = list("routines", matching(routineItems(), value));
     else if (!value) {
-      groups = [...list("agents", agentItems()), ...list("channels", channelItems())];
+      groups = [
+        // Fork: what is waiting for the user comes first
+        ...list(
+          "attention",
+          actionItems().filter((result) => result.action.group === "attention"),
+        ),
+        ...list("agents", agentItems()),
+        ...list("channels", channelItems()),
+      ];
     } else {
       const actions = matching(actionItems(), value);
       const preview = { limit: ALL_SECTION_LIMIT };
