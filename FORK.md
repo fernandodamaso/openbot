@@ -24,8 +24,8 @@ seems to do nothing, OpenBot is already running in the scratchpad.
 2. Try it live with `bun run dev` in that folder. This opens a separate dev copy of OpenBot with its
    own data, so my real OpenBot and its chats are not touched. Stop it with `bun run dev:stop`.
 3. When it looks right, commit it to `custom` (see the rules below).
-4. Put it in my real OpenBot with `openbot-fork-update --rebuild`. It takes about a minute. Then quit
-   OpenBot fully and open it again.
+4. Put it in my real OpenBot with `openbot-fork-update --rebuild` (a few minutes), then
+   `openbot-restart`. Agents do both and show me the result.
 5. Optional: `git push` to back it up on GitHub. Updates also push `custom` for me.
 
 ### Rules that keep updates painless
@@ -77,6 +77,7 @@ required" and refuse to open. Then the fix has to go into the new version instea
 | `openbot-fork-update --rebuild` | Build and install my current `custom` now. Also retries a failed update. |
 | `openbot-fork-update --no-push` | Same as a timer run, without pushing to GitHub. |
 | `OPENBOT_FORK_AGENT=codex openbot-fork-update` | Use Codex instead of Claude to fix problems (`none` = no agent). |
+| `openbot-restart` | Close OpenBot cleanly and start the installed build. |
 | `openbot-rollback` | Same as the "OpenBot: Roll Back" launcher entry. |
 | `systemctl --user list-timers openbot-fork-update.timer` | When the next update check runs. |
 | `systemctl --user disable --now openbot-fork-update.timer` | Pause automatic updates (`enable --now` resumes them). |

@@ -22,12 +22,21 @@ the fork rules win. The full guide for people is `FORK.md`.
 - This checkout has no team secrets (`.env.keys`). Do not run release, deploy, publish or
   `remote:*` scripts. Do not open pull requests to upstream unless the owner asks.
 - Try a change with `bun run dev`. It uses a separate dev profile, so the owner's real OpenBot data
-  is safe. Stop it with `bun run dev:stop`. Never stop or kill the owner's running OpenBot (process
-  `openbot`).
+  is safe. Stop it with `bun run dev:stop`. The dev profile has none of the owner's agents or
+  chats, so it cannot show most UI changes; the real check is the installed app (below).
 - To put committed work into the owner's real app, run
   `/home/admin/.local/bin/openbot-fork-update --rebuild`. It builds `custom` as committed, so
   uncommitted changes are not included. It then installs `/home/admin/Applications/OpenBot.AppImage`.
-  The owner must quit and reopen OpenBot to see the change.
+- **Always finish by showing the change working in the owner's real OpenBot.** The owner asked for
+  it, so they want to see it. Never stop at "installed, restart to see it" and never ask whether to
+  restart. After installing:
+  1. Restart it with `/home/admin/.local/bin/openbot-restart`. Never kill `openbot` or the AppImage by
+     a pattern (`pkill -f`); that crashes the app or kills your own shell.
+  2. Check the change in the running app: screenshot its window (it lives in the Hyprland
+     scratchpad), and for state or animation, restart with
+     `openbot-restart --remote-debugging-port=9333` and inspect the DOM over CDP. Restart once more
+     without the port when done.
+  3. Report what you saw, with the screenshot, not what you expect.
 - Do not edit `/home/admin/SSD/build/openbot-update`. The update script owns that worktree. The only
   exception: when the script starts you as its unattended agent, it tells you to work there.
 - Keep bun at exactly the `packageManager` version in `package.json`. Dev mode refuses any other
