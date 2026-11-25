@@ -23,7 +23,7 @@ export function SidebarFolderPeek(peekProps: { sectionId: string }) {
 
   return (
     <Show when={shown().length > 0}>
-      <div class="sidebar-folder-peek">
+      <div class="sidebar-section-body sidebar-folder-peek">
         <For each={shown()}>
           {(chat) => (
             <Switch>
