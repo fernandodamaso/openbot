@@ -38,6 +38,7 @@
   color: var(--openbot-text-on-accent);
 }
 
-:is(.agent-row-agent-status-unread, .channel-avatar-count)::before {
+/* doubled classes: channel-avatar.css sets this filter with the same specificity and loads later */
+:is(.agent-row-agent-status.agent-row-agent-status-unread, .channel-avatar-count.channel-avatar-count)::before {
   filter: hue-rotate(-55deg) brightness(0.95) saturate(2.2) contrast(1.05);
 }
