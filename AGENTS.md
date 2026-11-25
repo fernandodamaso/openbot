@@ -1,5 +1,35 @@
 # Repository guidance
 
+## Personal fork: read this first
+
+This checkout is a personal fork of `nightly-labs/openbot`, not the upstream repository. The owner
+uses it for their own UI/UX changes. Where these fork rules conflict with the upstream rules below,
+the fork rules win. The full guide for people is `FORK.md`.
+
+- Work on the `custom` branch only. `main` is an exact copy of upstream: never commit to it. Push
+  only to `origin` (`fernandodamaso/openbot`). Pushes to `upstream` are disabled.
+- Make each change one small commit with a message in the form `Fork: <what> (<why>)`. The
+  unattended update agent reads these messages to keep each change working when it merges a new
+  upstream release.
+- Keep the difference from upstream small. Change as few upstream lines as you can. Do not reformat,
+  rename or move upstream files. Prefer new files over large edits to upstream files.
+- **Non-negotiable:** keep the line with `OPENBOT_FORK_SELF_UPDATE` in `src/main/update-service.ts`.
+  Without it, the installed app replaces itself with the upstream build and loses the fork's
+  changes. The update script refuses to install a build without it.
+- This checkout has no team secrets (`.env.keys`). Do not run release, deploy, publish or
+  `remote:*` scripts. Do not open pull requests to upstream unless the owner asks.
+- Try a change with `bun run dev`. It uses a separate dev profile, so the owner's real OpenBot data
+  is safe. Stop it with `bun run dev:stop`. Never stop or kill the owner's running OpenBot (process
+  `openbot`).
+- To put committed work into the owner's real app, run
+  `/home/admin/.local/bin/openbot-fork-update --rebuild`. It builds `custom` as committed, so
+  uncommitted changes are not included. It then installs `/home/admin/Applications/OpenBot.AppImage`.
+  The owner must quit and reopen OpenBot to see the change.
+- Do not edit `/home/admin/SSD/build/openbot-update`. The update script owns that worktree. The only
+  exception: when the script starts you as its unattended agent, it tells you to work there.
+- Keep bun at exactly the `packageManager` version in `package.json`. Dev mode refuses any other
+  version.
+
 ## Communication
 
 Use ASD-STE100 Simplified Technical English for all text you write: questions, updates,

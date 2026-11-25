@@ -91,4 +91,5 @@ required" and refuse to open. Then the fix has to go into the new version instea
 | Timer | `/home/admin/.config/systemd/user/openbot-fork-update.timer` |
 | Update build folder (safe to delete; it is recreated) | `/home/admin/SSD/build/openbot-update` |
 | `node_modules` | On the Kingston drive (`/home/admin/SSD/offload/Projects/openbot/node_modules`), bind-mounted here |
+| Rules for agents working in this fork | The "Personal fork" section at the top of `AGENTS.md` (Claude reads it through `CLAUDE.md`) |
 | bun | Kept at exactly the version in `package.json` (`packageManager`), because dev mode refuses any other. The updater installs it when upstream changes it. |
