@@ -27,6 +27,16 @@ function pump(): void {
   }
 }
 
+// markdown to one plain line: drop emphasis/code marks, headings, quotes and list bullets, keep link text
+function plainText(markdown: string): string {
+  return markdown
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/^\s{0,3}(?:#{1,6}|>|[-*+]|\d+\.)\s+/gm, "")
+    .replace(/(\*\*|__|\*|~~|`+)/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function request(read: ReadTask, agentId: string, threadId: string, updatedAt: string): void {
   const key = `${threadId}@${updatedAt}`;
   if (requested.has(key)) return;
@@ -37,7 +47,7 @@ function request(read: ReadTask, agentId: string, threadId: string, updatedAt: s
       const last = [...snapshot.messages]
         .reverse()
         .find((message) => message.author !== "system" && message.text.trim() !== "");
-      const text = last ? last.text.replace(/\s+/g, " ").trim().slice(0, PREVIEW_LENGTH) : "";
+      const text = last ? plainText(last.text).slice(0, PREVIEW_LENGTH) : "";
       cache.set(threadId, { updatedAt, text });
       setVersion((value) => value + 1);
     } catch {
