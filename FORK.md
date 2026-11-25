@@ -1,43 +1,94 @@
-# Personal fork of OpenBot
+# My OpenBot fork
 
-This is a personal fork of [nightly-labs/openbot](https://github.com/nightly-labs/openbot) for
-UI/UX changes. It is licensed under the same PolyForm Noncommercial 1.0.0 terms as upstream
-(see `LICENSE` and `NOTICE`).
+This is my personal fork of [nightly-labs/openbot](https://github.com/nightly-labs/openbot), for my
+own UI/UX changes. Upstream's updates still reach me automatically: each new release is merged
+into my fork, then built and installed for me.
 
-## Branches
+- GitHub: https://github.com/fernandodamaso/openbot
+- Code: `/home/admin/Projects/openbot`
+- License: the same PolyForm Noncommercial 1.0.0 as upstream, for personal and noncommercial use
+  (see `LICENSE`).
 
-- `main` mirrors upstream `main`. Never commit to it.
-- `custom` is the branch that gets built: upstream's latest release plus the fork's own commits.
+## Opening OpenBot
 
-## Updates
+Use the normal **OpenBot** entry in the app launcher. It opens
+`/home/admin/Applications/OpenBot.AppImage`, which is always my fork's build.
 
-`/home/admin/.local/bin/openbot-fork-update` runs from the `openbot-fork-update.timer` user timer
-every 3 hours. When upstream publishes a new release, it works in its own worktree
-(`/home/admin/SSD/build/openbot-update`), never in this checkout:
+Its window always opens in the hidden scratchpad (a Hyprland rule in
+`/home/admin/.config/hypr/hosts/desktop.lua`). **SUPER+SHIFT+S** shows or hides it. If the launcher
+seems to do nothing, OpenBot is already running in the scratchpad.
 
-1. It merges the release tag into a copy of `custom`.
-2. A merge conflict or a failed build goes to an agent: `claude` by default, or set
-   `OPENBOT_FORK_AGENT=codex|none`.
-3. The script then checks the result itself. Your commits must still be there, the updater gate
-   must be intact, and the tree must be clean. Then it runs the typecheck and the build.
-4. Only if everything passes, it installs the AppImage as `/home/admin/Applications/OpenBot.AppImage`
-   and keeps the previous one as `OpenBot.prev.AppImage`.
-5. It fast-forwards `custom` and pushes it to GitHub.
+## Making a UI/UX change
 
-If the update fails, `custom` and the installed app are left as they were. The attempt is kept on a
-`fork-update-failed/*` branch, and you get a notification. Logs are in
-`/home/admin/.local/state/openbot-fork/logs/`.
+1. Work in `/home/admin/Projects/openbot` on the `custom` branch.
+2. Try it live with `bun run dev` in that folder. This opens a separate dev copy of OpenBot with its
+   own data, so my real OpenBot and its chats are not touched. Stop it with `bun run dev:stop`.
+3. When it looks right, commit it to `custom` (see the rules below).
+4. Put it in my real OpenBot with `openbot-fork-update --rebuild`. It takes about a minute. Then quit
+   OpenBot fully and open it again.
+5. Optional: `git push` to back it up on GitHub. Updates also push `custom` for me.
 
-The built app's own self-updater is turned off on Linux (`src/main/update-service.ts`), so it
-can't replace itself with an upstream build. Note that `OpenBot.prev.AppImage` may refuse to open
-your data after an update that changed the database schema.
+### Rules that keep updates painless
 
-## Keeping updates painless
+- **One small commit per change, with a clear message** saying what it changes and why, e.g.
+  "Fork: make the sidebar agent list denser". When upstream changes the same code, the update agent
+  reads these messages to keep my change working.
+- Change as few upstream lines as possible. Don't reformat, rename or move upstream files.
+- Prefer adding new files (components, styles) over rewriting large upstream ones.
+- Never commit to `main`; it is an exact copy of upstream.
+- Colours and themes need no code: OpenBot reads `~/.config/OpenBot/themes/`.
+- Don't touch the line with `OPENBOT_FORK_SELF_UPDATE` in `src/main/update-service.ts`. It stops
+  OpenBot from updating itself to the official build, which would lose my changes.
 
-- Keep each change a small, separate commit on `custom`, with a clear message saying what it
-  changes and why. The agent uses those messages to resolve conflicts.
-- Don't reformat, rename or move upstream files. Change as few lines as you can.
-- Prefer new files (components, styles) over editing large upstream ones.
-- Theming needs no patch: OpenBot reads `~/.config/OpenBot/themes/`.
-- To build and install your current `custom` without waiting for a release, run
-  `openbot-fork-update --rebuild`.
+## How updates arrive
+
+Every 3 hours a timer runs `/home/admin/.local/bin/openbot-fork-update`. When upstream has published
+a new release:
+
+1. It merges the release into a copy of `custom`, in a separate folder
+   (`/home/admin/SSD/build/openbot-update`). It never touches this folder or my uncommitted work.
+2. If my changes conflict with upstream's, or the build breaks, it hands the problem to an agent
+   (Claude by default) to fix.
+3. It checks the result itself: my commits are still there, the self-updater stays off, and the
+   code typechecks and builds. If anything fails, nothing is installed.
+4. It installs the new OpenBot, moves `custom` forward and pushes it to GitHub.
+
+I get a desktop notification at each step.
+
+| Notification | What to do |
+|---|---|
+| **OpenBot fork updated** | Quit OpenBot fully and reopen it to get the new version. If an agent fixed a conflict, the notification names its report; worth a quick read. |
+| **OpenBot fork update failed** | Nothing changed, and my OpenBot keeps working. The log is in the notification. Ask an agent to fix it on `custom`, then run `openbot-fork-update --rebuild`. The failed attempt is kept on a `fork-update-failed/*` branch for reference. |
+| **…uncommitted edits block moving custom** | The new version is installed, but my uncommitted edits are in the way. Commit or stash them, then run `git merge --ff-only fork-installed`. The next run also retries this. |
+
+## If a new version is broken
+
+Open **OpenBot: Roll Back** from the app launcher. It asks first, then closes OpenBot, switches to
+the version from before the last update (`OpenBot.prev.AppImage`), and reopens it. Open it again to
+switch forward. The next upstream release updates me normally.
+
+One catch: if the new version changed how OpenBot stores its data, the older one may say "update
+required" and refuse to open. Then the fix has to go into the new version instead.
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `openbot-fork-update --rebuild` | Build and install my current `custom` now. Also retries a failed update. |
+| `openbot-fork-update --no-push` | Same as a timer run, without pushing to GitHub. |
+| `OPENBOT_FORK_AGENT=codex openbot-fork-update` | Use Codex instead of Claude to fix problems (`none` = no agent). |
+| `openbot-rollback` | Same as the "OpenBot: Roll Back" launcher entry. |
+| `systemctl --user list-timers openbot-fork-update.timer` | When the next update check runs. |
+| `systemctl --user disable --now openbot-fork-update.timer` | Pause automatic updates (`enable --now` resumes them). |
+
+## Where things are
+
+| What | Where |
+|---|---|
+| Update logs (newest is `last.log`) | `/home/admin/.local/state/openbot-fork/logs/` |
+| Installed app / previous version | `/home/admin/Applications/OpenBot.AppImage` / `OpenBot.prev.AppImage` |
+| Update scripts | `/home/admin/.local/bin/openbot-fork-update`, `/home/admin/.local/bin/openbot-rollback` |
+| Timer | `/home/admin/.config/systemd/user/openbot-fork-update.timer` |
+| Update build folder (safe to delete; it is recreated) | `/home/admin/SSD/build/openbot-update` |
+| `node_modules` | On the Kingston drive (`/home/admin/SSD/offload/Projects/openbot/node_modules`), bind-mounted here |
+| bun | Kept at exactly the version in `package.json` (`packageManager`), because dev mode refuses any other. The updater installs it when upstream changes it. |
