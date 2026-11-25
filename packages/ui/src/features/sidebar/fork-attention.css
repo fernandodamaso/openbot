@@ -29,9 +29,15 @@
   }
 }
 
-/* Fork: unread count badge in the app accent colour (matches the folder unread count) instead of plum. */
-.agent-row-agent-status-unread {
+/* Fork: unread count badges in the app accent colour instead of dark plum. The plush texture is
+   the lilac felt image tinted by a filter, so the tint is changed along with the base gradient. */
+:is(.agent-row-agent-status-unread, .channel-avatar-count) {
   --sidebar-felt-under: linear-gradient(to bottom, var(--openbot-accent-hover), var(--openbot-accent));
 
+  background: var(--sidebar-felt-under) padding-box;
   color: var(--openbot-text-on-accent);
+}
+
+:is(.agent-row-agent-status-unread, .channel-avatar-count)::before {
+  filter: hue-rotate(-55deg) brightness(0.95) saturate(2.2) contrast(1.05);
 }
