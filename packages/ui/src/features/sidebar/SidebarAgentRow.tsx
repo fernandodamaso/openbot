@@ -45,6 +45,11 @@ export function SidebarAgentRow(rowProps: { agent: AgentProfile; waiting?: boole
     const current = state();
     return rowProps.waiting && current?.kind === "waiting" ? current : undefined;
   };
+  const attention = () => {
+    const current = state();
+    if (current?.kind === "unread") return !(props.mutedAgentIds?.has(rowProps.agent.id) ?? false);
+    return current?.kind === "waiting";
+  };
   const detail = () => hiddenDetail() || wait()?.detail || rowProps.agent.preview;
   const labelDetail = () => (wait()?.detail ? "" : `. ${hiddenLabel()}${detail()}`);
   const [menuOpen, setMenuOpen] = createSignal(false);
@@ -81,6 +86,7 @@ export function SidebarAgentRow(rowProps: { agent: AgentProfile; waiting?: boole
         aria-label={`${rowProps.agent.name}${title() ? `, ${title()}` : ""}${accessLabel()}${windowLabel()}${labelDetail()}${stateLabel() ? `. ${stateLabel()}` : ""}`}
         title={props.compact ? undefined : routineLabel() || undefined}
         aria-pressed={props.activeAgentId === rowProps.agent.id ? "true" : "false"}
+        data-attention={attention() && props.activeAgentId !== rowProps.agent.id ? "" : undefined}
         data-cuelume-navigate=""
         onClick={(event: MouseEvent) => {
           if (!sidebarClickIsSuppressed(event)) props.onSelectAgent(rowProps.agent.id);

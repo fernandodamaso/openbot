@@ -16,6 +16,11 @@ function needsLook(thread: ThreadItem): boolean {
   return thread.status.kind !== "idle" || (thread.unread ?? 0) > 0;
 }
 
+// Fork: threads that want the user stay visible under the agent even when collapsed
+function wantsUser(thread: ThreadItem): boolean {
+  return thread.status.kind === "waiting" || thread.status.kind === "failed" || (thread.unread ?? 0) > 0;
+}
+
 function shownThreads(threads: readonly ThreadItem[], openId: string | undefined, limit: number): ThreadItem[] {
   const latest = threads.slice(0, limit);
   const open = threads.find((thread) => thread.id === openId);
@@ -57,9 +62,12 @@ function InlineThreads(props: {
   const earlier = () => props.threads.filter((thread) => !needsLook(thread));
   const shownEarlier = () =>
     all() ? earlier() : shownThreads(earlier(), props.model.openId(props.agentId), EARLIER_LIMIT);
-  const shown = () => [...active(), ...shownEarlier()];
+  const pinned = () =>
+    props.threads.filter((thread) => wantsUser(thread) || thread.id === props.model.openId(props.agentId));
+  const visible = () => props.open || pinned().length > 0;
+  const shown = () => (props.open ? [...active(), ...shownEarlier()] : pinned());
   return (
-    <div class="sidebar-threads" data-open={props.open ? "" : undefined} inert={!props.open}>
+    <div class="sidebar-threads" data-open={visible() ? "" : undefined} inert={!visible()}>
       <div class="sidebar-threads-clip">
         <ul class="sidebar-threads-list" aria-label={t("sidebar.threads.label", { name: props.agentName })}>
           <For each={shown()} keyed={(thread) => thread.id}>
@@ -72,7 +80,7 @@ function InlineThreads(props: {
               />
             )}
           </For>
-          <Show when={earlier().length > EARLIER_LIMIT}>
+          <Show when={props.open && earlier().length > EARLIER_LIMIT}>
             <li class="sidebar-thread-item" style={{ "--sidebar-thread-index": shown().length }}>
               <Button
                 variant="ghost"
@@ -213,6 +221,11 @@ export function SidebarAgentThreads(threadProps: {
   createEffect(expanded, (open) => {
     if (open) threadProps.model.load(threadProps.agentId);
   });
+  // Fork: load every agent's threads up front so the ones that want the user can show while collapsed
+  createEffect(
+    () => threadProps.agentId,
+    (agentId) => threadProps.model.load(agentId),
+  );
   createEffect(card, (open) => {
     threadProps.onCardChange?.(open);
   });

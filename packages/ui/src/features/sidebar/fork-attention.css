@@ -1,0 +1,30 @@
+/* Fork: agents waiting for the user or with unread replies keep nudging right. */
+@media (prefers-reduced-motion: no-preference) {
+  .agent-row[data-attention] .agent-row-avatar {
+    animation: fork-attention-nudge 2.4s var(--openbot-ease-out, ease-out) infinite;
+  }
+
+  .agent-row[data-attention]:hover .agent-row-avatar {
+    animation: none;
+  }
+}
+
+@keyframes fork-attention-nudge {
+  0%,
+  40%,
+  100% {
+    translate: 0 0;
+  }
+  8% {
+    translate: 5px 0;
+  }
+  16% {
+    translate: 0 0;
+  }
+  24% {
+    translate: 3px 0;
+  }
+  32% {
+    translate: 0 0;
+  }
+}
