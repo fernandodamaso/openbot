@@ -2,11 +2,13 @@ import { Button, buttonVariants, ChevronDown, Folder, X } from "@openbot/ui";
 import type { AgentProfile } from "@openbot/ui/data";
 import { useText } from "@openbot/ui/text";
 import type { JSX } from "@solidjs/web";
-import { onSettled, Show } from "solid-js";
+import { createSignal, onSettled, Show } from "solid-js";
 import { createScrollFades } from "../../components/createScrollFades";
 import { AgentPicker, type AgentPickerAgent } from "../agents/AgentPicker";
+import type { ThreadArtifact } from "./extract-thread-artifacts";
 import { FileList } from "./FileList";
 import { fileCountLabel, type StoredFileAction, type StoredFileRow } from "./files-view";
+import { ThreadArtifactsView } from "./ThreadArtifactsView";
 
 export interface ConversationFilesPanelProps {
   conversationTitle: string;
@@ -24,6 +26,10 @@ export interface ConversationFilesPanelProps {
   onFileAction: (file: StoredFileRow, action: StoredFileAction) => void | Promise<void>;
   workspaceAgents?: readonly AgentPickerAgent[];
   onOpenWorkspace?: (agentId: string) => void;
+  artifacts?: readonly ThreadArtifact[];
+  onOpenArtifact?: (artifact: ThreadArtifact) => void;
+  onJumpToArtifact?: (messageId: string) => void;
+  loadArtifactImage?: (artifact: ThreadArtifact) => Promise<string | null>;
   resizer?: JSX.Element;
 }
 
@@ -67,6 +73,9 @@ export function ConversationFilesPanel(props: ConversationFilesPanelProps) {
   const { t, format } = useText();
   const fades = createScrollFades();
   const workspaceAgents = () => props.workspaceAgents ?? [];
+  const artifactsShown = () => props.onOpenArtifact !== undefined;
+  const [view, setView] = createSignal<"artifacts" | "files">("artifacts");
+  const showArtifacts = () => artifactsShown() && view() === "artifacts";
   onSettled(() => fades.stop);
   return (
     <aside
@@ -100,27 +109,61 @@ export function ConversationFilesPanel(props: ConversationFilesPanelProps) {
       </header>
       <div class={["conversation-files-content", fades.classes()]} ref={fades.bind} onScroll={fades.measure}>
         <div ref={fades.watch}>
-          <Show when={workspaceAgents().length > 0 && props.onOpenWorkspace}>
-            <WorkspaceFolderEntry agents={workspaceAgents()} onOpen={(agentId) => props.onOpenWorkspace?.(agentId)} />
+          <Show when={artifactsShown()}>
+            <fieldset class="thread-artifacts-modes">
+              <Button
+                variant="ghost"
+                type="button"
+                class="thread-artifacts-filter"
+                aria-pressed={view() === "artifacts" ? "true" : "false"}
+                onClick={() => setView("artifacts")}
+              >
+                {t("conversation.globalSearch.tab.messages")}
+                <span class="thread-artifacts-count">{(props.artifacts ?? []).length}</span>
+              </Button>
+              <Button
+                variant="ghost"
+                type="button"
+                class="thread-artifacts-filter"
+                aria-pressed={view() === "files" ? "true" : "false"}
+                onClick={() => setView("files")}
+              >
+                {t("files.conversation.title")}
+                <span class="thread-artifacts-count">{props.files.length}</span>
+              </Button>
+            </fieldset>
           </Show>
-          <FileList
-            label={t("files.conversation.label", { title: props.conversationTitle })}
-            files={props.files}
-            agents={props.agents}
-            showConversation={false}
-            compact
-            groupByDay
-            groupHeadingLevel={3}
-            loading={props.loading}
-            error={props.error}
-            onRetry={props.onRetry}
-            now={props.now}
-            canDelete={props.canDelete}
-            emptyTitle={t("files.conversation.emptyTitle")}
-            emptyDescription={t("files.conversation.emptyDescription")}
-            onPreview={props.onPreviewFile}
-            onAction={props.onFileAction}
-          />
+          <Show when={!showArtifacts()}>
+            <Show when={workspaceAgents().length > 0 && props.onOpenWorkspace}>
+              <WorkspaceFolderEntry agents={workspaceAgents()} onOpen={(agentId) => props.onOpenWorkspace?.(agentId)} />
+            </Show>
+            <FileList
+              label={t("files.conversation.label", { title: props.conversationTitle })}
+              files={props.files}
+              agents={props.agents}
+              showConversation={false}
+              compact
+              groupByDay
+              groupHeadingLevel={3}
+              loading={props.loading}
+              error={props.error}
+              onRetry={props.onRetry}
+              now={props.now}
+              canDelete={props.canDelete}
+              emptyTitle={t("files.conversation.emptyTitle")}
+              emptyDescription={t("files.conversation.emptyDescription")}
+              onPreview={props.onPreviewFile}
+              onAction={props.onFileAction}
+            />
+          </Show>
+          <Show when={showArtifacts()}>
+            <ThreadArtifactsView
+              artifacts={props.artifacts ?? []}
+              onOpen={(artifact) => props.onOpenArtifact?.(artifact)}
+              onJump={(messageId) => props.onJumpToArtifact?.(messageId)}
+              loadImage={props.loadArtifactImage}
+            />
+          </Show>
         </div>
       </div>
     </aside>

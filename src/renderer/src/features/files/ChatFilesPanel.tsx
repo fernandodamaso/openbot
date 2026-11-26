@@ -1,6 +1,8 @@
 import { canPreviewAttachment, type StoredFileRow } from "@openbot/contracts/ipc";
+import type { AgentMessage } from "@openbot/ui/data";
 import type { AgentPickerAgent } from "@openbot/ui/features/agents/AgentPicker";
 import { ConversationFilesPanel } from "@openbot/ui/features/files/ConversationFilesPanel";
+import { extractThreadArtifacts, type ThreadArtifact } from "@openbot/ui/features/files/extract-thread-artifacts";
 import type { JSX } from "@solidjs/web";
 import { type FilesPort, filesPort } from "./files-port";
 import { createStorageUsage } from "./storage-usage";
@@ -13,10 +15,13 @@ export default function ChatFilesPanel(props: {
   serverId: string;
   source: ChatFilesSource;
   conversationTitle: string;
+  messages?: readonly AgentMessage[] | undefined;
   canManage: boolean;
   onClose: () => void;
   onPreviewFile: (file: StoredFileRow) => void;
   onShowMessage: (messageId: string) => void;
+  onOpenArtifact?: (artifact: ThreadArtifact) => void;
+  loadArtifactImage?: (artifact: ThreadArtifact) => Promise<string | null>;
   calls?: FilesPort | undefined;
   workspaceAgents: readonly AgentPickerAgent[];
   onOpenWorkspace: (agentId: string) => void;
@@ -29,6 +34,17 @@ export default function ChatFilesPanel(props: {
     }),
     () => props.calls ?? filesPort(),
   );
+  let artifactCache: { signature: string; artifacts: readonly ThreadArtifact[] } | undefined;
+  const artifacts = () => {
+    const messages = props.messages ?? [];
+    const signature = messages
+      .map((message) => `${message.id}:${message.author}:${message.body.length}:${message.attachments?.length ?? 0}`)
+      .join("|");
+    if (artifactCache?.signature === signature) return artifactCache.artifacts;
+    const next = extractThreadArtifacts(messages);
+    artifactCache = { signature, artifacts: next };
+    return next;
+  };
   const usage = () => storage.state.usage;
   const bytes = () => {
     const source = props.source;
@@ -47,6 +63,10 @@ export default function ChatFilesPanel(props: {
       conversationTitle={props.conversationTitle}
       files={usage()?.files ?? []}
       chatBytes={bytes()}
+      artifacts={artifacts()}
+      onOpenArtifact={props.onOpenArtifact}
+      onJumpToArtifact={props.onShowMessage}
+      loadArtifactImage={props.loadArtifactImage}
       loading={storage.scanState() === "scanning" && !usage()}
       canDelete={props.canManage}
       error={storage.error()}

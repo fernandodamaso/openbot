@@ -1321,9 +1321,10 @@ const IMAGE_FILE_PATTERN = /\.(?:avif|gif|jpe?g|png|svg|webp)$/iu;
 const IMAGE_FILE_LIMIT = INPUT_LIMITS.attachments;
 
 export type MessageImageFile = FileDirectoryContext;
+export type MessageFileTarget = MessageImageFile & { asWritten?: string };
 
-export function messageImageFiles(blocks: readonly string[]): MessageImageFile[] {
-  const files = new Map<string, MessageImageFile>();
+export function messageFileTargets(blocks: readonly string[]): MessageFileTarget[] {
+  const files = new Map<string, MessageFileTarget>();
   for (const body of blocks) {
     const directory = messageFileDirectory(body);
     void markdown.walkTokens(lexBlockTokens(body, true), (token) => {
@@ -1332,11 +1333,35 @@ export function messageImageFiles(blocks: readonly string[]): MessageImageFile[]
         : tokenIs(token, "link")
           ? linkFileTarget(writtenLinkTarget(token))
           : null;
-      if (file && IMAGE_FILE_PATTERN.test(fileReferenceName(file.path)))
-        files.set(`${file.kind}:${file.path}`, { path: file.path, kind: file.kind });
+      if (file) files.set(`${file.kind}:${file.path}`, file);
     });
   }
-  return [...files.values()].slice(0, IMAGE_FILE_LIMIT);
+  return [...files.values()];
+}
+
+export function messageImageFiles(blocks: readonly string[]): MessageImageFile[] {
+  return messageFileTargets(blocks)
+    .filter((file) => IMAGE_FILE_PATTERN.test(fileReferenceName(file.path)))
+    .slice(0, IMAGE_FILE_LIMIT);
+}
+
+export interface MessageCodeTarget {
+  code: string;
+  language: string;
+}
+
+export function messageCodeTargets(blocks: readonly string[]): MessageCodeTarget[] {
+  const targets: MessageCodeTarget[] = [];
+  for (const body of blocks) {
+    void markdown.walkTokens(lexBlockTokens(body, true), (token) => {
+      if (!tokenIs(token, "code")) return;
+      const language = token.lang?.trim().split(/\s+/u)[0] ?? "";
+      if (language.toLowerCase() === "math") return;
+      const code = token.text.replace(/\n+$/u, "");
+      if (code.trim()) targets.push({ code, language });
+    });
+  }
+  return targets;
 }
 
 const MARKDOWN_ESCAPABLE = /[!-/:-@[-`{-~]/u;
