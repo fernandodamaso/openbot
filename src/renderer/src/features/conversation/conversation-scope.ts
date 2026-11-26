@@ -44,6 +44,7 @@ import { actionToast } from "../../action-toast";
 import { matchesShortcut } from "../../keyboard-shortcut-preference";
 import { holdNativeBrowserPage, reserveNativeBrowserPageInset } from "../../native-browser-page";
 import { createScopeGuard } from "../../scope-lifetime";
+import { forkTabShortcut } from "../agent-threads/fork-tab-actions";
 import { serverSupportsCapability } from "../servers/server-capabilities";
 import { codexLiveAccess } from "../speech/codex-live-access";
 import { followDictatedChannelReply } from "../speech/speech-replies";
@@ -1099,6 +1100,24 @@ export function createConversationViewScope(props: ConversationProps) {
     event.preventDefault();
     event.stopPropagation();
   };
+  const handleForkTabShortcut = (event: KeyboardEvent) => {
+    if (event.defaultPrevented || insideOverlay(event.target)) return;
+    const shortcut = forkTabShortcut(event);
+    const header = props.threads?.header;
+    if (!shortcut || !header) return;
+    if (shortcut === "reopenClosed") {
+      if (!header.onReopenClosed) return;
+      event.preventDefault();
+      event.stopPropagation();
+      header.onReopenClosed();
+      return;
+    }
+    const active = header.tabs.find((tab) => tab.id === header.activeId);
+    if (active?.kind !== "side") return;
+    event.preventDefault();
+    event.stopPropagation();
+    header.onClose(active.id);
+  };
   function besideDraftKey(): string | undefined {
     const id = activeRightPanel() === "thread" ? shownPanelThreadId() : null;
     return id === null ? undefined : threadComposer.sideDraftKey(id);
@@ -1764,6 +1783,8 @@ export function createConversationViewScope(props: ConversationProps) {
     const chatSearchListener = whenVisible(handleChatSearchShortcut);
     const threadListener = whenVisible(handleThreadShortcut);
     keyboardTarget.addEventListener("keydown", threadListener);
+    const forkTabListener = whenVisible(handleForkTabShortcut);
+    keyboardTarget.addEventListener("keydown", forkTabListener);
     keyboardTarget.addEventListener("keydown", escapeListener);
     keyboardWindow.addEventListener("keydown", closeActiveRemoteBrowserTab);
     keyboardTarget.addEventListener("keydown", chatSearchListener);
@@ -1822,6 +1843,7 @@ export function createConversationViewScope(props: ConversationProps) {
       keyboardWindow.removeEventListener("keydown", closeActiveRemoteBrowserTab);
       keyboardTarget.removeEventListener("keydown", chatSearchListener);
       keyboardTarget.removeEventListener("keydown", threadListener);
+      keyboardTarget.removeEventListener("keydown", forkTabListener);
       window.removeEventListener("pointerdown", closeMessageMenus);
       readerInput?.removeEventListener("wheel", readerWheel);
       readerInput?.removeEventListener("touchmove", readerTouchMove);
