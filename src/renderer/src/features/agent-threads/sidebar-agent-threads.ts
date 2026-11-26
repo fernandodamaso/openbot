@@ -1,11 +1,9 @@
 import { sideThreadItem } from "@openbot/ui/features/conversation/threads/thread-items";
 import { MAIN_THREAD_ID } from "@openbot/ui/features/conversation/threads/thread-types";
-import { forkAgentActivity } from "@openbot/ui/features/sidebar/fork-activity";
 import type { SidebarAgentThreads } from "@openbot/ui/features/sidebar/sidebar-types";
 import type { AgentTasks } from "../agent-tasks/agent-tasks-state";
 import type { AgentThreadTabsState } from "./agent-thread-tabs";
 import { type ThreadWaits, taskWaitsFor } from "./conversation-threads";
-import { threadPreview } from "./thread-previews";
 
 export interface SidebarAgentThreadsInput {
   tasks: AgentTasks;
@@ -45,15 +43,5 @@ export function sidebarAgentThreads(input: SidebarAgentThreadsInput): SidebarAge
     onNew: input.onNew,
     onArchive: (agentId, threadId) => void tabs.archive(agentId, threadId),
     onDelete: editable ? (agentId, threadId) => void tabs.remove(agentId, threadId) : undefined,
-    preview: (agentId, threadId) => {
-      const task = tasks.snapshot(agentId)?.tasks.find((item) => item.id === threadId);
-      return task ? threadPreview(tasks.readTask, agentId, task.id, task.updatedAt) : undefined;
-    },
-    // Fork: a running thread shows its live step text (turn progress, else the task's progress line)
-    live: (agentId, threadId) => {
-      const task = tasks.snapshot(agentId)?.tasks.find((item) => item.id === threadId);
-      if (task?.state !== "running") return undefined;
-      return forkAgentActivity(agentId, task.activeTurnId) || task.progress || undefined;
-    },
   };
 }

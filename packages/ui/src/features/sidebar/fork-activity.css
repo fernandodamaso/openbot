@@ -1,18 +1,15 @@
 /* Fork: live step text on working agent rows and side-thread rows uses the accent text colour. */
-.agent-row-preview[data-live],
-.sidebar-thread-preview[data-live] {
+.agent-row-preview[data-live] {
   color: var(--openbot-accent-text);
 }
 
-.agent-row-preview[data-live] .agent-row-thinking-dots,
-.sidebar-thread-preview[data-live] .agent-row-thinking-dots {
+.agent-row-preview[data-live] .agent-row-thinking-dots {
   display: inline-flex;
   margin-inline-end: 4px;
   vertical-align: middle;
 }
 
-.agent-row-preview[data-live] .agent-row-thinking-dots i,
-.sidebar-thread-preview[data-live] .agent-row-thinking-dots i {
+.agent-row-preview[data-live] .agent-row-thinking-dots i {
   display: inline-block;
   width: 4px;
   height: 4px;
