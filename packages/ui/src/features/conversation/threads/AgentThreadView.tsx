@@ -809,6 +809,7 @@ export function AgentThreadView(props: AgentThreadViewProps) {
           class="virtual-chat-list virtual-chat-list-static"
           ref={(element: HTMLDivElement) => {
             messageList = element;
+            rail.listRef(element);
             fades.watch(element);
           }}
         >

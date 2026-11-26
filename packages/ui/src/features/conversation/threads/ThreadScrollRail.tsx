@@ -1,33 +1,75 @@
 import { prefersReducedMotion } from "@openbot/ui/utils";
-import { createMemo, createSignal } from "solid-js";
+import { createMemo, createSignal, onCleanup } from "solid-js";
 import {
+  type ChatScrollQuestion,
   type ChatScrollRailProps,
   type ChatScrollRow,
   type ChatScrollSection,
   chatScrollQuestions,
 } from "../ChatScrollRail";
 
+function sameQuestions(left: readonly ChatScrollQuestion[], right: readonly ChatScrollQuestion[]): boolean {
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) {
+    const previous = left[index];
+    const next = right[index];
+    if (
+      !previous ||
+      !next ||
+      previous.key !== next.key ||
+      previous.label !== next.label ||
+      previous.reply !== next.reply ||
+      previous.index !== next.index
+    )
+      return false;
+  }
+  return true;
+}
+
 export function createThreadScrollRail<Row extends ChatScrollRow>(options: {
   rows: () => readonly Row[];
   question: (row: Row) => string | undefined;
   reply?: (row: Row) => string | undefined;
-}): { ref: (element: HTMLElement) => void; props: ChatScrollRailProps } {
+}): {
+  ref: (element: HTMLElement) => void;
+  listRef: (element: HTMLElement) => void;
+  props: ChatScrollRailProps;
+} {
   const [scrollElement, setScrollElement] = createSignal<HTMLElement>();
   const [revision, setRevision] = createSignal(0);
   let labels = new Map<string, string>();
+  let scroller: HTMLElement | undefined;
+  let content: HTMLElement | undefined;
   let resizes: ResizeObserver | undefined;
-  const questions = createMemo(() => {
-    const read = chatScrollQuestions(options.rows(), options.question, labels, options.reply);
-    labels = read.labels;
-    return read.questions;
-  });
+  let frame = 0;
+  const schedule = () => {
+    if (frame !== 0) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      setRevision((value) => value + 1);
+    });
+  };
+  const observe = () => {
+    resizes?.disconnect();
+    resizes = undefined;
+    if (!scroller) return;
+    resizes = new ResizeObserver(() => schedule());
+    resizes.observe(scroller);
+    if (content) resizes.observe(content);
+  };
+  const questions = createMemo(
+    () => {
+      const read = chatScrollQuestions(options.rows(), options.question, labels, options.reply);
+      labels = read.labels;
+      return read.questions;
+    },
+    { equals: sameQuestions },
+  );
   const sections = createMemo((): ChatScrollSection[] => {
     revision();
     const element = scrollElement();
     return questions().map((question) => {
-      const message = element?.querySelector<HTMLElement>(
-        `article[data-chat-search-message="${CSS.escape(question.key)}"]`,
-      );
+      const message = element?.querySelector<HTMLElement>(`[data-chat-search-message="${CSS.escape(question.key)}"]`);
       const row = message?.closest<HTMLElement>(".virtual-chat-row");
       const start =
         element && row
@@ -49,10 +91,17 @@ export function createThreadScrollRail<Row extends ChatScrollRow>(options: {
     element.scrollTo({ top: section.start, behavior: prefersReducedMotion() ? "auto" : "smooth" });
   };
   const ref = (element: HTMLElement) => {
+    scroller = element;
     setScrollElement(element);
-    resizes?.disconnect();
-    resizes = new ResizeObserver(() => setRevision((value) => value + 1));
-    resizes.observe(element);
+    observe();
   };
-  return { ref, props: { scrollElement, sections, onJump } };
+  const listRef = (element: HTMLElement) => {
+    content = element;
+    observe();
+  };
+  onCleanup(() => {
+    resizes?.disconnect();
+    if (frame !== 0) cancelAnimationFrame(frame);
+  });
+  return { ref, listRef, props: { scrollElement, sections, onJump } };
 }
