@@ -17,6 +17,8 @@ import type {
   SideThread,
 } from "../conversation/conversation-types";
 import type { AgentThreadTabsState } from "./agent-thread-tabs";
+import { idleTabIds, rememberClosedTabs, takeClosedTab } from "./fork-tab-actions";
+import { threadPreview } from "./thread-previews";
 
 type PromptEvent = Extract<AgentEvent, { type: "prompt" }>;
 
@@ -122,9 +124,43 @@ export function conversationThreads(input: ConversationThreadsInput): Conversati
       canStartNew: true,
       onOpen: (id) => tabs.open(agentId, id),
       onNew: () => tabs.startNew(agentId),
-      onClose: (id) => tabs.close(agentId, id),
-      onCloseOthers: (id) => tabs.closeOthers(agentId, id),
-      onCloseToTheRight: (id) => tabs.closeToTheRight(agentId, id),
+      onClose: (id) => {
+        rememberClosedTabs(agentId, [id]);
+        tabs.close(agentId, id);
+      },
+      onCloseOthers: (id) => {
+        rememberClosedTabs(
+          agentId,
+          lists.tabs.filter((tab) => tab.id !== id).map((tab) => tab.id),
+        );
+        tabs.closeOthers(agentId, id);
+      },
+      onCloseToTheRight: (id) => {
+        const index = lists.tabs.findIndex((tab) => tab.id === id);
+        rememberClosedTabs(
+          agentId,
+          lists.tabs.slice(index + 1).map((tab) => tab.id),
+        );
+        tabs.closeToTheRight(agentId, id);
+      },
+      preview: (id) => {
+        const task = list.find((entry) => entry.id === id);
+        return task ? threadPreview(tasks.readTask, agentId, task.id, task.updatedAt) : undefined;
+      },
+      onCloseIdle: () => {
+        const ids = idleTabIds(lists.tabs, activeId);
+        rememberClosedTabs(agentId, ids);
+        tabs.closeMany(agentId, ids);
+      },
+      canCloseIdle: idleTabIds(lists.tabs, activeId).length > 0,
+      onReopenClosed: () => {
+        const id = takeClosedTab(
+          agentId,
+          (candidate) =>
+            !tabs.hidden().has(candidate) && list.some((task) => task.id === candidate && task.state !== "closed"),
+        );
+        if (id !== undefined) tabs.open(agentId, id);
+      },
       onMove: (id, index) => tabs.move(agentId, id, index),
       onArchive: (id) => void tabs.archive(agentId, id),
       onRestore: (id) => void tabs.restore(agentId, id),

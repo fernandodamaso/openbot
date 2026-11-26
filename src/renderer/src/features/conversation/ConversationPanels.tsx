@@ -733,6 +733,9 @@ export function ConversationPanels(panelProps: { onOpenUsage?: ((trigger: HTMLBu
         besideIds={sideThreadIds()}
         canStartNew={props.threads?.header.canStartNew ?? false}
         resizer={paneResizer(split, "threads-panel")}
+        openIds={props.threads?.header.tabs.map((tab) => tab.id)}
+        preview={props.threads?.header.preview}
+        onCloseTab={props.threads?.header.onClose}
         onOpen={openListedThread}
         onToggleBeside={toggleListedThreadBeside}
         onNew={startNewThread}

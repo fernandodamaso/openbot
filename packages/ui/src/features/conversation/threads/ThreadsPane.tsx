@@ -1,8 +1,9 @@
-import { Button, IconButton, MessageCirclePlus, PanelRight } from "@openbot/ui";
+import { Button, IconButton, MessageCirclePlus, PanelRight, X } from "@openbot/ui";
 import { sidebarMessageTime } from "@openbot/ui/features/sidebar/sidebar-filtering";
 import { useText } from "@openbot/ui/text";
 import type { JSX } from "@solidjs/web";
-import { For, Show } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
+import { ThreadListFilter, threadMatchesQuery } from "./ThreadListFilter";
 import { ThreadStemMark } from "./ThreadMenu";
 import { ThreadStatusMark } from "./ThreadStatusMark";
 import { ThreadTitle } from "./ThreadTitle";
@@ -14,6 +15,9 @@ export interface ThreadsPaneProps {
   besideIds: readonly string[];
   canStartNew: boolean;
   resizer?: JSX.Element;
+  openIds?: readonly string[] | undefined;
+  preview?: ((id: string) => string | undefined) | undefined;
+  onCloseTab?: ((id: string) => void) | undefined;
   onOpen: (id: string) => void;
   onToggleBeside: (id: string) => void;
   onNew: () => void;
@@ -23,8 +27,11 @@ function ThreadsPaneRow(props: {
   thread: ThreadItem;
   current: boolean;
   beside: boolean;
+  open: boolean;
+  preview: string | undefined;
   onOpen: () => void;
   onToggleBeside: () => void;
+  onCloseTab: (() => void) | undefined;
 }) {
   const { t, format } = useText();
   const draft = () => props.thread.kind === "draft";
@@ -37,12 +44,34 @@ function ThreadsPaneRow(props: {
         onClick={() => props.onOpen()}
       >
         <Show when={props.thread.stem}>{(stem) => <ThreadStemMark stem={stem()} />}</Show>
-        <ThreadTitle class="threads-pane-title" title={props.thread.title} />
+        <span class="fork-thread-text">
+          <ThreadTitle class="threads-pane-title" title={props.thread.title} />
+          <Show when={props.preview}>
+            {(text) => (
+              <span class="fork-thread-preview" dir="auto">
+                {text()}
+              </span>
+            )}
+          </Show>
+        </span>
         <ThreadStatusMark status={props.thread.status} unread={props.thread.unread} />
         <Show when={!draft()}>
           <span class="threads-pane-time">{sidebarMessageTime(props.thread.updatedAt, format)}</span>
         </Show>
       </Button>
+      <Show when={props.open && props.onCloseTab}>
+        {(close) => (
+          <IconButton
+            variant="ghost"
+            size="icon-xs"
+            class="threads-pane-close fork-thread-close"
+            label={t("conversation.threads.closeTab")}
+            onClick={() => close()()}
+          >
+            <X aria-hidden="true" />
+          </IconButton>
+        )}
+      </Show>
       <Show when={!draft()}>
         <IconButton
           variant="ghost"
@@ -61,10 +90,17 @@ function ThreadsPaneRow(props: {
 
 export function ThreadsPane(props: ThreadsPaneProps) {
   const { t } = useText();
+  const [query, setQuery] = createSignal("");
+  const matching = () =>
+    props.threads.filter((thread) => threadMatchesQuery(query(), thread.title, props.preview?.(thread.id)));
+  const openTab = (id: string) => props.openIds?.includes(id) === true;
   return (
     <aside id="threads-panel" class="browser-panel threads-pane" aria-label={t("conversation.sidePanel.pane.threads")}>
       {props.resizer}
       <div class="threads-pane-scroll">
+        <Show when={props.threads.length > 0}>
+          <ThreadListFilter value={query()} onInput={setQuery} />
+        </Show>
         <Show
           when={props.threads.length > 0}
           fallback={
@@ -78,18 +114,26 @@ export function ThreadsPane(props: ThreadsPaneProps) {
           }
         >
           <ul class="threads-pane-list" aria-label={t("conversation.threads.all")}>
-            <For each={props.threads} keyed={(thread) => thread.id}>
+            <For each={matching()} keyed={(thread) => thread.id}>
               {(thread) => (
                 <ThreadsPaneRow
                   thread={thread()}
                   current={props.activeId === thread().id}
                   beside={props.besideIds.includes(thread().id)}
+                  open={openTab(thread().id)}
+                  preview={props.preview?.(thread().id)}
+                  onCloseTab={props.onCloseTab ? () => props.onCloseTab?.(thread().id) : undefined}
                   onOpen={() => props.onOpen(thread().id)}
                   onToggleBeside={() => props.onToggleBeside(thread().id)}
                 />
               )}
             </For>
           </ul>
+          <Show when={query().trim() !== "" && matching().length === 0}>
+            <p class="fork-thread-nomatch" role="status">
+              {t("common.noMatches")}
+            </p>
+          </Show>
         </Show>
       </div>
     </aside>

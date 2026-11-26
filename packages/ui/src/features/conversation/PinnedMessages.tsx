@@ -47,11 +47,14 @@ export function PinnedMessages(props: PinnedMessagesProps) {
   return (
     <Popover.Root open={open()} onOpenChange={change} placement="bottom-end" gutter={6}>
       <Popover.Trigger
-        class={`${buttonVariants({ variant: "ghost" })} header-panel-toggle no-drag`}
+        class={`${buttonVariants({ variant: "ghost" })} header-panel-toggle pinned-messages-trigger no-drag`}
         aria-label={t("chat.pins.title")}
         title={t("chat.pins.title")}
       >
         <Pin aria-hidden="true" class="size-[14px]" />
+        <span class="pinned-messages-count" aria-hidden="true" data-empty={props.pins.length === 0 ? "" : undefined}>
+          {props.pins.length}
+        </span>
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content

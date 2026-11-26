@@ -4,9 +4,11 @@ import {
   ArrowRightToLine,
   CircleX,
   ContextMenu,
+  Eraser,
   Input,
   PanelRight,
   PencilLine,
+  RotateCcw,
   SlidingTabs,
   Trash2,
   X,
@@ -554,6 +556,22 @@ export function ThreadTabs(props: ThreadHeaderProps) {
               <ArrowRightToLine class="agent-context-icon size-4" aria-hidden="true" />
               <span>{t("conversation.threads.closeRight")}</span>
             </ContextMenu.Item>
+            <Show when={props.onCloseIdle !== undefined}>
+              <ContextMenu.Item
+                disabled={!props.canCloseIdle}
+                aria-label={t("common.close")}
+                title={t("common.close")}
+                onSelect={() => props.onCloseIdle?.()}
+              >
+                <Eraser class="agent-context-icon size-4" aria-hidden="true" />
+              </ContextMenu.Item>
+            </Show>
+            <Show when={props.onReopenClosed !== undefined}>
+              <ContextMenu.Item onSelect={() => props.onReopenClosed?.()}>
+                <RotateCcw class="agent-context-icon size-4" aria-hidden="true" />
+                <span>{t("browser.tab.reopenClosed")}</span>
+              </ContextMenu.Item>
+            </Show>
             <Show when={isSide() && (props.onArchive !== undefined || canDelete())}>
               <ContextMenu.Separator />
               <Show when={props.onArchive}>

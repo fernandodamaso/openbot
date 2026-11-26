@@ -141,6 +141,13 @@ export function createAgentThreadTabs(options: AgentThreadTabsOptions) {
     setOrder(agentId, next, next.includes(current) ? current : id);
   }
 
+  function closeMany(agentId: string, ids: readonly string[]): void {
+    const drop = new Set(ids);
+    const next = tabOrder(agentId).filter((entry) => !drop.has(entry));
+    const current = activeId(agentId);
+    setOrder(agentId, next, next.includes(current) ? current : MAIN_THREAD_ID);
+  }
+
   function move(agentId: string, id: string, index: number): void {
     const order = tabOrder(agentId).filter((entry) => entry !== id && entry !== MAIN_THREAD_ID);
     order.splice(index, 0, id);
@@ -452,6 +459,7 @@ export function createAgentThreadTabs(options: AgentThreadTabsOptions) {
     close,
     closeOthers,
     closeToTheRight,
+    closeMany,
     move,
     toSide,
     toChat,
