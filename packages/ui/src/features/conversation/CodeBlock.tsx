@@ -6,6 +6,7 @@ import { createEffect, createMemo, createSignal, For, onCleanup, Show, untrack }
 import { ScrollEdges } from "../../components/ScrollEdges";
 import { useText } from "../../text";
 import type { MessageCodeBlock } from "./DataTable";
+import { CODE_FOLD_MIN_LINES, CODE_FOLD_PREVIEW_LINES } from "./fork-fold";
 
 export interface CodeToken {
   text: string;
@@ -136,6 +137,11 @@ export function CodeBlock(props: {
   const { t } = useText();
   const [lines, setLines] = createSignal<CodeLine[]>(untrack(() => plainCodeLines(props.block.code)));
   const [copied, setCopied] = createSignal(false);
+  const [expanded, setExpanded] = createSignal(false);
+  const [wrap, setWrap] = createSignal(false);
+  const foldable = () => props.streaming !== true && lines().length > CODE_FOLD_MIN_LINES;
+  const collapsed = () => foldable() && !expanded();
+  const visibleLines = () => (collapsed() ? lines().slice(0, CODE_FOLD_PREVIEW_LINES) : lines());
   let highlightRun = 0;
   let highlighted: HighlightedCode | undefined;
   let copiedTimer: ReturnType<typeof setTimeout> | undefined;
@@ -183,7 +189,7 @@ export function CodeBlock(props: {
     <ScrollEdges axis="x" class="message-code-frame" viewClass="message-code-scroll" dir="ltr">
       <pre class="message-code-pre">
         <code>
-          <For each={lines()}>
+          <For each={visibleLines()}>
             {(line, lineIndex) => (
               <span class="message-code-line">
                 <span class="message-code-line-number" aria-hidden="true">
@@ -204,7 +210,12 @@ export function CodeBlock(props: {
   );
 
   return (
-    <section class="message-code-block" aria-label={t("chat.code.blockLabel", { language: languageLabel() })}>
+    <section
+      class="message-code-block"
+      data-folded={collapsed() ? "" : undefined}
+      data-wrap={wrap() ? "" : undefined}
+      aria-label={t("chat.code.blockLabel", { language: languageLabel() })}
+    >
       <header class="message-code-header">
         <div class="message-code-heading">
           <Show when={props.block.filename}>
@@ -214,6 +225,29 @@ export function CodeBlock(props: {
         </div>
         <div class="message-code-actions">
           {props.actions}
+          <Show when={foldable()}>
+            <span class="message-code-lines-chip">{lines().length}</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              class="message-code-fold"
+              aria-expanded={expanded() ? "true" : "false"}
+              onClick={() => setExpanded(!expanded())}
+            >
+              {expanded() ? t("chat.message.showLess") : t("chat.preview.expandLabel")}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              class="message-code-wrap"
+              aria-pressed={wrap() ? "true" : "false"}
+              onClick={() => setWrap(!wrap())}
+            >
+              {t("preview.panel.wrapLines")}
+            </Button>
+          </Show>
           <Button
             type="button"
             variant="ghost"

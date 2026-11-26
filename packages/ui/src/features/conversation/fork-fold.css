@@ -1,0 +1,79 @@
+.message-code-block[data-folded] .message-code-scroll {
+  max-height: calc(6 * 19px + 18px);
+  overflow: hidden;
+}
+
+.message-code-block[data-folded] .message-code-frame {
+  position: relative;
+}
+
+.message-code-block[data-folded] .message-code-frame::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 40px;
+  background: linear-gradient(to bottom, var(--openbot-transparent), var(--openbot-bg-sidebar));
+  pointer-events: none;
+}
+
+.message-code-block[data-wrap] .message-code-pre,
+.message-code-block[data-wrap] .message-code-pre > code {
+  width: 100%;
+}
+
+.message-code-block[data-wrap] .message-code-line-source {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.message-code-lines-chip {
+  flex: none;
+  min-width: 22px;
+  border: 1px solid var(--openbot-border);
+  border-radius: var(--openbot-radius-sm);
+  padding-inline: 5px;
+  color: var(--openbot-text-dim);
+  font-size: var(--openbot-text-sm);
+  font-variant-numeric: tabular-nums;
+  line-height: 16px;
+  text-align: center;
+}
+
+:where(.ui-button).message-code-fold,
+:where(.ui-button).message-code-wrap {
+  height: 26px;
+  flex: none;
+  border-radius: var(--openbot-radius-sm);
+  padding-inline: 7px;
+  color: var(--openbot-text-muted);
+  font-size: var(--openbot-text-sm);
+  line-height: 16px;
+}
+
+:where(.ui-button).message-code-wrap[aria-pressed="true"] {
+  color: var(--openbot-text-primary);
+}
+
+.fork-reply-folded {
+  display: grid;
+  gap: var(--openbot-space-1);
+  min-width: 0;
+}
+
+.fork-reply-folded-heading,
+.fork-reply-folded-summary {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fork-reply-folded-summary {
+  color: var(--openbot-text-muted);
+  font-size: var(--openbot-text-sm);
+}
+
+.fork-reply-fold-toggle {
+  justify-self: start;
+}
