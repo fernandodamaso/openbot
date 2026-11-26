@@ -257,10 +257,9 @@ export function attachmentIpcHandlers({
       openWorkspaceFile: scopedHandler(parseOpenWorkspaceFile, {
         local: async (parsed) => {
           const workspaceFile = await runCauseEffect(service.resolveLocalWorkspaceFile(parsed.agentId, parsed.path));
-          await deliverLocalFile(workspaceFile.path, workspaceFile.name, parsed.action, async () => {
-            if (workspaceFile.insideWorkspace) await openPath(workspaceFile.path);
-            else shell.showItemInFolder(workspaceFile.path);
-          });
+          await deliverLocalFile(workspaceFile.path, workspaceFile.name, parsed.action, () =>
+            openOrRevealPath(workspaceFile.path),
+          );
         },
         remote: async (parsed, serverId) => {
           const downloaded = await runCauseEffect(
