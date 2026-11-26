@@ -1,3 +1,4 @@
+import { threadWantsUser } from "@openbot/ui/features/conversation/threads/fork-thread-attention";
 import {
   DRAFT_THREAD_ID,
   MAIN_THREAD_ID,
@@ -23,6 +24,14 @@ export function isIdleTab(tab: ThreadItem): boolean {
 
 export function idleTabIds(tabs: readonly ThreadItem[], activeId: string): string[] {
   return tabs.filter((tab) => tab.id !== activeId && isIdleTab(tab)).map((tab) => tab.id);
+}
+
+// Tabs that want the user come first, so an overflowing strip does not hide them. The draft tab and
+// the order that the user chose are kept.
+export function threadsWantingUserFirst(tabs: readonly ThreadItem[]): ThreadItem[] {
+  const wanted = tabs.filter((tab) => tab.kind !== "draft" && threadWantsUser(tab));
+  const rest = tabs.filter((tab) => tab.kind === "draft" || !threadWantsUser(tab));
+  return [...wanted, ...rest];
 }
 
 export function rememberClosedTabs(agentId: string, tabs: readonly ClosedTab[]): void {

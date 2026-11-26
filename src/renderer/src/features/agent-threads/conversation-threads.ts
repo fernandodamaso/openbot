@@ -17,7 +17,13 @@ import type {
   SideThread,
 } from "../conversation/conversation-types";
 import type { AgentThreadTabsState } from "./agent-thread-tabs";
-import { type ClosedTab, idleTabIds, rememberClosedTabs, takeClosedTab } from "./fork-tab-actions";
+import {
+  type ClosedTab,
+  idleTabIds,
+  rememberClosedTabs,
+  takeClosedTab,
+  threadsWantingUserFirst,
+} from "./fork-tab-actions";
 import { cachedThreadPreview, threadPreview } from "./thread-previews";
 
 type PromptEvent = Extract<AgentEvent, { type: "prompt" }>;
@@ -128,6 +134,7 @@ export function conversationThreads(input: ConversationThreadsInput): Conversati
   return {
     header: {
       ...lists,
+      tabs: threadsWantingUserFirst(lists.tabs),
       activeId,
       canStartNew: true,
       onOpen: (id) => tabs.open(agentId, id),
