@@ -4,6 +4,7 @@ import type { AgentPickerAgent } from "@openbot/ui/features/agents/AgentPicker";
 import { ConversationFilesPanel } from "@openbot/ui/features/files/ConversationFilesPanel";
 import { extractThreadArtifacts, type ThreadArtifact } from "@openbot/ui/features/files/extract-thread-artifacts";
 import type { JSX } from "@solidjs/web";
+import { createMemo } from "solid-js";
 import { type FilesPort, filesPort } from "./files-port";
 import { createStorageUsage } from "./storage-usage";
 
@@ -35,16 +36,20 @@ export default function ChatFilesPanel(props: {
     () => props.calls ?? filesPort(),
   );
   let artifactCache: { signature: string; artifacts: readonly ThreadArtifact[] } | undefined;
-  const artifacts = () => {
+  const artifacts = createMemo(() => {
     const messages = props.messages ?? [];
-    const signature = messages
-      .map((message) => `${message.id}:${message.author}:${message.body.length}:${message.attachments?.length ?? 0}`)
-      .join("|");
+    const settled: string[] = [];
+    const streaming: string[] = [];
+    for (const message of messages) {
+      if (message.streaming === true) streaming.push(message.id);
+      else settled.push(`${message.id}:${message.author}:${message.body.length}:${message.attachments?.length ?? 0}`);
+    }
+    const signature = `${settled.join("|")}#${streaming.join(",")}`;
     if (artifactCache?.signature === signature) return artifactCache.artifacts;
     const next = extractThreadArtifacts(messages);
     artifactCache = { signature, artifacts: next };
     return next;
-  };
+  });
   const usage = () => storage.state.usage;
   const bytes = () => {
     const source = props.source;

@@ -158,19 +158,19 @@ export function ThreadArtifactsView(props: ThreadArtifactsViewProps) {
         <Show when={visible().length > 0} fallback={<p class="thread-artifacts-empty">{t("files.list.noMatches")}</p>}>
           <Show when={images().length > 0}>
             <ul class="thread-artifacts-grid">
-              <For each={images()}>
+              <For each={images()} keyed={(artifact) => artifact.key}>
                 {(artifact) => (
                   <li class="thread-artifacts-tile">
                     <Button
                       variant="ghost"
                       type="button"
                       class="thread-artifacts-open"
-                      onClick={() => props.onOpen(artifact)}
+                      onClick={() => props.onOpen(artifact())}
                     >
-                      <ArtifactThumb artifact={artifact} loadImage={props.loadImage} />
-                      <span class="thread-artifacts-caption">{artifact.name}</span>
+                      <ArtifactThumb artifact={artifact()} loadImage={props.loadImage} />
+                      <span class="thread-artifacts-caption">{artifact().name}</span>
                     </Button>
-                    <ArtifactJump artifact={artifact} onJump={props.onJump} />
+                    <ArtifactJump artifact={artifact()} onJump={props.onJump} />
                   </li>
                 )}
               </For>
@@ -178,19 +178,19 @@ export function ThreadArtifactsView(props: ThreadArtifactsViewProps) {
           </Show>
           <Show when={rows().length > 0}>
             <ul class="thread-artifacts-list">
-              <For each={rows()}>
+              <For each={rows()} keyed={(artifact) => artifact.key}>
                 {(artifact) => (
                   <li class="thread-artifacts-row">
                     <Button
                       variant="ghost"
                       type="button"
                       class="thread-artifacts-open"
-                      onClick={() => props.onOpen(artifact)}
+                      onClick={() => props.onOpen(artifact())}
                     >
-                      {artifact.kind === "link" ? <Link aria-hidden="true" /> : <File aria-hidden="true" />}
-                      <span>{artifact.name}</span>
+                      {artifact().kind === "link" ? <Link aria-hidden="true" /> : <File aria-hidden="true" />}
+                      <span>{artifact().name}</span>
                     </Button>
-                    <ArtifactJump artifact={artifact} onJump={props.onJump} />
+                    <ArtifactJump artifact={artifact()} onJump={props.onJump} />
                   </li>
                 )}
               </For>
@@ -198,7 +198,9 @@ export function ThreadArtifactsView(props: ThreadArtifactsViewProps) {
           </Show>
           <Show when={codes().length > 0}>
             <ul class="thread-artifacts-list">
-              <For each={codes()}>{(artifact) => <CodeArtifactRow artifact={artifact} onJump={props.onJump} />}</For>
+              <For each={codes()} keyed={(artifact) => artifact.key}>
+                {(artifact) => <CodeArtifactRow artifact={artifact()} onJump={props.onJump} />}
+              </For>
             </ul>
           </Show>
         </Show>

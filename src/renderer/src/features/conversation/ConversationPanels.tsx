@@ -30,6 +30,7 @@ import type { ThreadArtifact } from "@openbot/ui/features/files/extract-thread-a
 import { McpSignInRelayDialog } from "@openbot/ui/features/settings/McpSignInPage";
 import { useText } from "@openbot/ui/text";
 import { actionToast } from "../../action-toast";
+import { toAgentMessages } from "../../app-message-projection";
 import { useChatBubbleStyle } from "../../chat-bubble-style-preference";
 import {
   readSidePanelWidth,
@@ -463,9 +464,18 @@ export function ConversationPanels(panelProps: { onOpenUsage?: ((trigger: HTMLBu
     return props.agents.filter((agent) => agentIds.has(agent.id));
   });
   const openAgentWorkspace = (agentId: string) => openWorkspaceFolder(".", agentId, "tab");
+  const panelThreadMessages = createMemo(() => {
+    const threads = props.threads;
+    const agentId = props.agent?.id;
+    if (!threads?.open || !agentId) return undefined;
+    const messages = threads.conversation?.messages.filter((message) => message.questionPrompt?.resolution !== null);
+    return messages ? toAgentMessages(messages, agentId) : undefined;
+  });
   function showFileMessage(messageId: string) {
-    if (channel) void replyJump.reveal(messageId, undefined, undefined);
-    else void props.onOpenSearchMessage?.(messageId);
+    if (channel) return void replyJump.reveal(messageId, undefined, undefined);
+    const threads = props.threads;
+    if (threads?.open) return void threads.onOpenMessage(threads.open.id, messageId);
+    void props.onOpenSearchMessage?.(messageId);
   }
   const artifactImageFiles = createMessageImageFiles(conversationRuntime(props).agent);
   const openThreadArtifact = (artifact: ThreadArtifact) => {
@@ -715,7 +725,7 @@ export function ConversationPanels(panelProps: { onOpenUsage?: ((trigger: HTMLBu
                 serverId={server().id}
                 source={source()}
                 conversationTitle={filesTitle()}
-                messages={props.messages}
+                messages={props.threads?.open !== undefined ? panelThreadMessages() : props.messages}
                 canManage={canManageStorage(server())}
                 onClose={() => closeSidePanelPane("files")}
                 onPreviewFile={(file) => void previewAttachment(file)}
