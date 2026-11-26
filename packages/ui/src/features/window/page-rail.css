@@ -184,6 +184,7 @@
 .window-rail-button .window-rail-usage-ring {
   position: absolute;
   inset: 1px;
+  overflow: visible;
   width: 34px;
   height: 34px;
   transform: rotate(-90deg);
@@ -211,6 +212,10 @@
 
 .window-rail-usage-arc[data-usage-tone="critical"] {
   stroke: var(--openbot-danger);
+}
+
+.window-rail-usage-pace {
+  stroke: var(--openbot-text-primary);
 }
 
 .window-rail-usage-more .window-rail-usage-count {

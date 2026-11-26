@@ -1,5 +1,5 @@
 import { AppLogo, type AppLogoVariant, ProviderLogo } from "@openbot/brand";
-import { usageTone } from "@openbot/team-client/plan-limits";
+import { usagePaceRemainingPercent, usageTone } from "@openbot/team-client/plan-limits";
 import {
   Bot,
   BriefcaseBusiness,
@@ -25,10 +25,14 @@ import {
   Waypoints,
 } from "@openbot/ui";
 import { AccountUsageDetails, AccountUsageWindowList } from "@openbot/ui/features/account/AccountUsageDetails";
-import { type AccountUsageProviderRow, accountUsageRowKey } from "@openbot/ui/features/account/account-usage-view";
+import {
+  type AccountUsageProviderRow,
+  type AccountUsageWindowRow,
+  accountUsageRowKey,
+} from "@openbot/ui/features/account/account-usage-view";
 import { useText } from "@openbot/ui/text";
 import { Dynamic, type JSX } from "@solidjs/web";
-import { createMemo, createSignal, For, onSettled, Show } from "solid-js";
+import { createMemo, createSignal, For, onCleanup, onSettled, Show } from "solid-js";
 import { CreditIcon } from "../credits/CreditIcon";
 import { CreditsRailChip } from "../credits/CreditsRailChip";
 
@@ -157,11 +161,13 @@ function UsageCard(props: { rows: AccountUsageProviderRow[] }) {
   );
 }
 
-const RING = { size: 34, stroke: 2.25, spacing: 4.5 };
+const RING = { size: 34, stroke: 2.25, spacing: 4.5, tick: 1.6 };
+const RAIL_CLOCK_MS = 30_000;
 
 function UsageRings(props: {
   row: AccountUsageProviderRow;
   shared: readonly AccountUsageProviderRow[];
+  now: number;
   onOpen: (button: HTMLElement) => void;
 }) {
   const { t, format } = useText();
@@ -184,7 +190,10 @@ function UsageRings(props: {
   };
   const windows = () => [...ringRow().ringWindows].reverse().slice(0, 2);
   const unavailable = () => props.row.readFailed && windows().length === 0;
+  const pace = (window: AccountUsageWindowRow) =>
+    usagePaceRemainingPercent(window.durationMins, window.resetsAt, props.now);
   const outerRadius = (RING.size - RING.stroke) / 2;
+  const center = RING.size / 2;
   return (
     <RailButton
       label={label()}
@@ -215,6 +224,20 @@ function UsageRings(props: {
                   pathLength={100}
                   stroke-dasharray={`${window().remainingPercent} 100`}
                 />
+              </Show>
+              <Show when={pace(window())}>
+                {(percent) => (
+                  <line
+                    class="window-rail-usage-pace"
+                    x1={center + outerRadius - index * RING.spacing - RING.tick}
+                    y1={center}
+                    x2={center + outerRadius - index * RING.spacing + RING.tick}
+                    y2={center}
+                    stroke-width={1.5}
+                    stroke-linecap="round"
+                    transform={`rotate(${percent() * 3.6} ${center} ${center})`}
+                  />
+                )}
               </Show>
             </g>
           )}
@@ -652,6 +675,9 @@ export function PageRail(props: PageRailProps) {
       .map((row) => ({ row, shared: rows.filter((other) => owner(other) === row) }));
   });
   const [ringSlots, setRingSlots] = createSignal(START_RING_PLACES);
+  const [now, setNow] = createSignal(Date.now());
+  const clock = window.setInterval(() => setNow(Date.now()), RAIL_CLOCK_MS);
+  onCleanup(() => window.clearInterval(clock));
   const ringLayout = createMemo(() => {
     if (rings().length <= ringSlots()) return { shown: rings(), more: [] };
     const all = providerRings(rings());
@@ -795,7 +821,7 @@ export function PageRail(props: PageRailProps) {
             }}
           >
             <For each={ringLayout().shown} keyed={(ring) => accountUsageRowKey(ring.row)}>
-              {(ring) => <UsageRings row={ring().row} shared={ring().shared} onOpen={props.onUsage} />}
+              {(ring) => <UsageRings row={ring().row} shared={ring().shared} now={now()} onOpen={props.onUsage} />}
             </For>
             <Show when={ringLayout().more.length > 0}>
               <MoreUsageRings rings={ringLayout().more} onOpen={props.onUsage} />
