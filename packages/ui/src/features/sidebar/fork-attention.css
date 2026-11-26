@@ -71,3 +71,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Fork: under the pinned tiles, the threads of pinned agents that want the user show as compact rows. */
+.sidebar-pinned-group .sidebar-pinned-threads {
+  width: min(236px, 100%);
+  margin: 2px auto 0;
+  padding-inline: 2px;
+}

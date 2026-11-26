@@ -3,6 +3,7 @@ import type { JSX } from "@solidjs/web";
 import { createEffect, createMemo, createSignal, For, onCleanup, Show } from "solid-js";
 import { TypingDots } from "../../components/TypingDots";
 import { useText } from "../../text";
+import { threadWantsUser } from "../conversation/threads/fork-thread-attention";
 import { ThreadStatusText, ThreadTabIcon } from "../conversation/threads/ThreadStatusMark";
 import { ThreadTitle } from "../conversation/threads/ThreadTitle";
 import { type ThreadItem, threadBusy } from "../conversation/threads/thread-types";
@@ -16,11 +17,6 @@ const EARLIER_LIMIT = 3;
 
 function needsLook(thread: ThreadItem): boolean {
   return thread.status.kind !== "idle" || (thread.unread ?? 0) > 0;
-}
-
-// Fork: threads that want the user stay visible under the agent even when collapsed
-function wantsUser(thread: ThreadItem): boolean {
-  return thread.status.kind === "waiting" || thread.status.kind === "failed" || (thread.unread ?? 0) > 0;
 }
 
 function shownThreads(threads: readonly ThreadItem[], openId: string | undefined, limit: number): ThreadItem[] {
@@ -92,7 +88,7 @@ function ThreadRowItem(props: {
   );
 }
 
-function ThreadRow(props: {
+export function ThreadRow(props: {
   model: SidebarAgentThreadsModel;
   agentId: string;
   thread: ThreadItem;
@@ -151,8 +147,9 @@ function InlineThreads(props: {
   const earlier = () => props.threads.filter((thread) => !needsLook(thread));
   const shownEarlier = () =>
     all() ? earlier() : shownThreads(earlier(), props.model.openId(props.agentId), EARLIER_LIMIT);
+  // Fork: threads that want the user stay visible under the agent even when collapsed
   const pinned = () =>
-    props.threads.filter((thread) => wantsUser(thread) || thread.id === props.model.openId(props.agentId));
+    props.threads.filter((thread) => threadWantsUser(thread) || thread.id === props.model.openId(props.agentId));
   const visible = () => props.open || pinned().length > 0;
   const shown = () => (props.open ? [...active(), ...shownEarlier()] : pinned());
   return (
