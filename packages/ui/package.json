@@ -163,6 +163,7 @@
     "./features/conversation/threads/BranchDivider": "./src/features/conversation/threads/BranchDivider.tsx",
     "./features/conversation/threads/ThreadHeader": "./src/features/conversation/threads/ThreadHeader.tsx",
     "./features/conversation/threads/ThreadsPane": "./src/features/conversation/threads/ThreadsPane.tsx",
+    "./features/conversation/threads/fork-tabs.css": "./src/features/conversation/threads/fork-tabs.css",
     "./features/conversation/threads/thread-items": "./src/features/conversation/threads/thread-items.ts",
     "./features/conversation/threads/thread-types": "./src/features/conversation/threads/thread-types.ts",
     "./features/conversation/ChatRowBoundary": "./src/features/conversation/ChatRowBoundary.tsx",

@@ -1,0 +1,31 @@
+/* Fork: with side-thread tabs open, the agent subtitle steps aside so more tabs fit. */
+.conversation-header:has(.agent-threads-tab:not([data-thread-id="draft"])) .conversation-agent-title-room {
+  display: none;
+}
+
+/* Fork: the pinned-messages button shows how many messages are pinned. Dimmed when there are none. */
+.pinned-messages-trigger {
+  position: relative;
+}
+
+.pinned-messages-count {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  min-inline-size: 16px;
+  block-size: 16px;
+  padding-inline: var(--openbot-space-0-5);
+  border-radius: var(--openbot-radius-pill);
+  background: var(--openbot-accent);
+  color: var(--openbot-accent-text);
+  font-size: var(--openbot-text-sm);
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  pointer-events: none;
+}
+
+.pinned-messages-count[data-empty] {
+  background: var(--openbot-border);
+  color: var(--openbot-text-muted);
+}

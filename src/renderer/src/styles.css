@@ -30,6 +30,7 @@
 @import "@openbot/ui/features/sidebar/sidebar-tooltips.css";
 @import "@openbot/ui/features/sidebar/sidebar-threads.css";
 @import "@openbot/ui/features/sidebar/fork-attention.css";
+@import "@openbot/ui/features/conversation/threads/fork-tabs.css";
 @import "@openbot/ui/features/agent-dock/agent-dock.css";
 @import "./features/agent-dock/agent-dock.css";
 @import "./features/account/account-update-island.css";
