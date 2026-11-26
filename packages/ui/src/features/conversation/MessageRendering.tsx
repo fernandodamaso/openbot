@@ -15,6 +15,7 @@ import {
   ConfirmDialog,
   ContextMenu,
   DropdownMenu,
+  ExternalLink,
   Hash,
   Info,
   LoaderCircle,
@@ -71,6 +72,7 @@ import {
   type MessageImageFile,
   messageImageFiles,
 } from "./MarkdownMessageText";
+import type { MessageFileTarget } from "./message-file-target";
 import { ReplyQuote } from "./ReplyQuote";
 import {
   nextStreamingReveal,
@@ -1174,14 +1176,29 @@ export interface MessageMenuItemsProps {
   pin?: { pinned: boolean; onToggle: () => void } | undefined;
   onUseAsBackdrop?: (() => void) | undefined;
   onDelete?: (() => void) | undefined;
+  file?: MessageFileTarget | null | undefined;
+  onOpenFilePath?: ((file: MessageFileTarget) => void) | undefined;
 }
 
 export function MessageMenuItems(props: MessageMenuItemsProps) {
   const { t } = useText();
   const react = (emoji: MessageReaction) => props.onReact(props.message.reaction === emoji ? null : emoji);
   const sendToChannel = () => (props.sendToChannel?.channels.length ? props.sendToChannel : undefined);
+  const openFile = () => {
+    const file = props.file;
+    const open = props.onOpenFilePath;
+    return file && open ? () => open(file) : undefined;
+  };
   return (
     <>
+      <Show when={openFile()}>
+        {(open) => (
+          <ContextMenu.Item onSelect={() => open()()}>
+            <ExternalLink aria-hidden="true" />
+            <span>{t("chat.menu.openFilePath")}</span>
+          </ContextMenu.Item>
+        )}
+      </Show>
       <Show when={props.onReply}>
         {(onReply) => (
           <ContextMenu.Item onSelectAfterClose={onReply()}>

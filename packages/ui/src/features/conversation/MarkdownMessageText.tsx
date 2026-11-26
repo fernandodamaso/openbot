@@ -1154,6 +1154,8 @@ function LocalFileLink(props: {
       type="button"
       class="message-file-reference"
       data-file-tone={attachmentReferenceTone(name)}
+      data-file-path={props.path}
+      data-file-kind={props.kind}
       aria-label={label()}
       title={props.path}
       data-cuelume-tap="open"

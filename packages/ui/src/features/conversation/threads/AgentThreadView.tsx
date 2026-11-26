@@ -100,6 +100,7 @@ import {
 } from "solid-js";
 import { ChatScrollRail } from "../ChatScrollRail";
 import { createComposerRowsResize } from "../createComposerRowsResize";
+import type { MessageFileTarget } from "../message-file-target";
 import { type AgentThreadBranchSource, BranchDivider } from "./BranchDivider";
 import { createThreadScrollRail } from "./ThreadScrollRail";
 import { MAIN_THREAD_ID } from "./thread-types";
@@ -219,6 +220,7 @@ export interface AgentThreadViewProps {
   onOpenFile?:
     | ((kind: "shared" | "workspace", agentId: string | undefined, path: string, asWritten?: string) => void)
     | undefined;
+  onOpenFilePath?: ((kind: "shared" | "workspace", path: string, agentId: string) => void) | undefined;
   onSelectAgent?: ((agentId: string, tabId?: string) => void) | undefined;
   changeMarkerActions?: ChangeMarkerActions | undefined;
   onPreview: (attachment: AttachmentSummary) => void;
@@ -575,6 +577,7 @@ export function AgentThreadView(props: AgentThreadViewProps) {
     return { pinned, onToggle: () => pins.onToggle(message.id, !pinned) };
   }
   function menuItems(message: AgentMessage, onCopy: (message: AgentMessage) => void): MessageMenuItemsProps {
+    const openFilePath = props.onOpenFilePath;
     return {
       message,
       reactions: false,
@@ -586,6 +589,7 @@ export function AgentThreadView(props: AgentThreadViewProps) {
       pin: pinAction(message),
       onUseAsBackdrop: props.backdropAction?.(message),
       onDelete: deleteAction(message),
+      ...(openFilePath ? { onOpenFilePath: (file) => openFilePath(file.kind, file.path, props.agent.id) } : {}),
     };
   }
   function messageActions(message: AgentMessage): JSX.Element | undefined {
@@ -627,10 +631,10 @@ export function AgentThreadView(props: AgentThreadViewProps) {
       </Show>
     );
   }
-  function messageMenu(message: AgentMessage): (() => JSX.Element) | undefined {
+  function messageMenu(message: AgentMessage): ((file: MessageFileTarget | null) => JSX.Element) | undefined {
     const onCopy = props.onCopyMessage;
     if (!onCopy || message.streaming || message.itemType === "commentary") return undefined;
-    return () => <MessageMenu {...menuItems(message, onCopy)} authorName={author(message).name} />;
+    return (file) => <MessageMenu {...menuItems(message, onCopy)} file={file} authorName={author(message).name} />;
   }
   const shownRow = (message: AgentMessage) =>
     shownInThread(message) || (message.kind === "thinking" && props.stepsAbove?.(message.id) !== undefined);

@@ -45,6 +45,7 @@ export function ConversationSideThread(props: { threadId: string; resizer: JSX.E
     attachmentDownloads,
     imageCopies,
     openThreadFile,
+    openFilePathExternally,
     installedSkills,
     installedSkillsLoadFailed,
     mcpServers,
@@ -282,6 +283,7 @@ export function ConversationSideThread(props: { threadId: string; resizer: JSX.E
             onOpenFile={(kind, agentId, path, asWritten) =>
               fromThread(() => openThreadFile(kind, agentId, path, asWritten))
             }
+            onOpenFilePath={openFilePathExternally}
             onSelectAgent={view.onSelectAgent}
             onOpenWaitingAgent={openWaitingAgent}
             changeMarkerActions={changeMarkerActions}

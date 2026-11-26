@@ -628,6 +628,20 @@ export function createPanelsStore(deps: PanelsStoreDeps) {
     );
   }
 
+  function openFilePathExternally(kind: "shared" | "workspace", path: string, agentId?: string) {
+    const ownerAgentId = conversationOwnerId(deps.props);
+    if (!ownerAgentId) return;
+    const target = { agentId: ownerAgentId, serverId: deps.props.server?.id ?? "local" };
+    const agent = conversationRuntime(deps.props).agent;
+    const request =
+      kind === "shared"
+        ? agent.openSharedFile({ path, action: "open" })
+        : agentId
+          ? agent.openWorkspaceFile({ agentId, path, action: "open" })
+          : Promise.resolve();
+    void request.catch((error) => deps.setComposerError(errorMessage(error, t("attachment.error.openFile")), target));
+  }
+
   function openThreadFile(kind: "shared" | "workspace", agentId: string | undefined, path: string, asWritten?: string) {
     const written = asWritten && agentId ? () => openWorkspaceFile(asWritten, undefined, agentId) : undefined;
     if (kind === "shared") openSharedFile(path, "tab", written);
@@ -931,6 +945,7 @@ export function createPanelsStore(deps: PanelsStoreDeps) {
     imageCopies,
     openSharedFile,
     openThreadFile,
+    openFilePathExternally,
     openWorkspaceFile,
     openWorkspaceFolder,
     openWorkspaceFolderEntry,

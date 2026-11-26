@@ -116,6 +116,8 @@ export function RichMessageText(props: RichMessageTextProps) {
                 type="button"
                 class="message-file-reference"
                 data-file-tone={attachmentReferenceTone(name)}
+                data-file-path={sharedPath ?? undefined}
+                data-file-kind={sharedPath ? "shared" : undefined}
                 aria-label={attachment ? t("chat.file.openAttached", { name }) : t("chat.file.openShared", { name })}
                 aria-describedby={tooltipId}
                 data-cuelume-tap="open"

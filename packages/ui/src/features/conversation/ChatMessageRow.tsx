@@ -10,7 +10,7 @@ import {
   MessageHeader,
 } from "@openbot/ui";
 import type { JSX } from "@solidjs/web";
-import { children, createMemo, For, Show } from "solid-js";
+import { children, createMemo, createSignal, For, Show } from "solid-js";
 import { avatarHeadColor } from "../../bloub-avatar";
 import type { AgentMessage, AgentProfile } from "../../data";
 import { useText } from "../../text";
@@ -20,6 +20,7 @@ import { chatBubbleColor, useBackdropBubbles } from "./BackdropBubbles";
 import type { ImageCopies } from "./ImageLightbox";
 import type { MessageImageFile } from "./MarkdownMessageText";
 import { conversationBubbleVariant, MessageBody } from "./MessageRendering";
+import { type MessageFileTarget, messageFileTargetOf } from "./message-file-target";
 import { solidBubbleTakesDarkText } from "./own-bubble";
 
 export interface ChatMessageAuthor {
@@ -50,7 +51,7 @@ export interface ChatMessageRowProps {
   reactionOverflowCount?: number | undefined;
   onRemoveReaction?: (() => void) | undefined;
   actions?: JSX.Element;
-  menu?: (() => JSX.Element) | undefined;
+  menu?: ((file: MessageFileTarget | null) => JSX.Element) | undefined;
   children?: JSX.Element;
   steps?: JSX.Element;
   actionsBeside?: boolean | undefined;
@@ -134,6 +135,7 @@ export function ChatMessageRow(props: ChatMessageRowProps): JSX.Element {
       )
     );
   };
+  const [fileTarget, setFileTarget] = createSignal<MessageFileTarget | null>(null);
   const keepNativeMenu = (row: HTMLElement) => {
     let pressOnSelection: boolean | undefined;
     row.addEventListener(
@@ -146,6 +148,7 @@ export function ChatMessageRow(props: ChatMessageRowProps): JSX.Element {
     row.addEventListener(
       "contextmenu",
       (event) => {
+        setFileTarget(messageFileTargetOf(event.target));
         const selected = pressOnSelection ?? onSelection(event);
         pressOnSelection = undefined;
         if (!event.isTrusted) return;
@@ -325,7 +328,12 @@ export function ChatMessageRow(props: ChatMessageRowProps): JSX.Element {
     </>
   );
   return (
-    <ContextMenu.Root modal={false}>
+    <ContextMenu.Root
+      modal={false}
+      onOpenChange={(open: boolean) => {
+        if (!open) setFileTarget(null);
+      }}
+    >
       <ContextMenu.Trigger
         as="div"
         disabled={!props.menu}
@@ -358,7 +366,7 @@ export function ChatMessageRow(props: ChatMessageRowProps): JSX.Element {
       >
         {body()}
       </ContextMenu.Trigger>
-      <Show when={props.menu}>{(menu) => <ContextMenu.Portal>{menu()()}</ContextMenu.Portal>}</Show>
+      <Show when={props.menu}>{(menu) => <ContextMenu.Portal>{menu()(fileTarget())}</ContextMenu.Portal>}</Show>
     </ContextMenu.Root>
   );
 }

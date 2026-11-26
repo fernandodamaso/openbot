@@ -479,6 +479,7 @@ export const messages = {
   "chat.actions.more": "Другие действия",
   "chat.menu.reply": "Ответить",
   "chat.menu.copy": "Копировать сообщение",
+  "chat.menu.openFilePath": "Открыть путь к файлу",
   "chat.menu.react": "Реакция",
   "chat.menu.branch": "Ответвить отсюда",
   "chat.menu.markUnread": "Не прочитано",
