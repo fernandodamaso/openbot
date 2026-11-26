@@ -11,7 +11,7 @@ import {
 import { createScrollFades } from "@openbot/ui/components/createScrollFades";
 import { sidebarMessageTime } from "@openbot/ui/features/sidebar/sidebar-filtering";
 import { useText } from "@openbot/ui/text";
-import { createSignal, For, onSettled, Show } from "solid-js";
+import { createSignal, For, onCleanup, onSettled, Show } from "solid-js";
 import { ThreadListFilter, threadMatchesQuery } from "./ThreadListFilter";
 import { ThreadStatusMark, ThreadStatusText, ThreadTabIcon, threadAttention } from "./ThreadStatusMark";
 import { ThreadTitle } from "./ThreadTitle";
@@ -157,6 +157,11 @@ function ThreadMenuTrigger(props: ThreadHeaderProps & { mode: ThreadRowMode }) {
   );
 }
 
+function MenuCloseReset(props: { onClose: () => void }) {
+  onCleanup(() => props.onClose());
+  return null;
+}
+
 export function ThreadMenu(props: ThreadHeaderProps & { mode: ThreadRowMode }) {
   const { t, format } = useText();
   let archivedMenu: HTMLDivElement | undefined;
@@ -175,6 +180,7 @@ export function ThreadMenu(props: ThreadHeaderProps & { mode: ThreadRowMode }) {
       <ThreadMenuTrigger {...props} />
       <DropdownMenu.Portal>
         <DropdownMenu.Content class="agent-threads-menu">
+          <MenuCloseReset onClose={() => setQuery("")} />
           <Show when={props.threads.length > 0}>
             <ThreadListFilter
               value={query()}

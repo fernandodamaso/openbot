@@ -356,6 +356,7 @@ export function MessageBody(props: {
   const replyFoldable = createMemo(
     () =>
       props.message.author === "agent" &&
+      props.showFull !== true &&
       props.message.streaming !== true &&
       !streamingBody.revealing() &&
       fullText().length >= REPLY_FOLD_MIN_CHARACTERS &&
@@ -367,7 +368,7 @@ export function MessageBody(props: {
     setReplyFolded(props.message.id, next);
     setReplyFoldedState(next);
   };
-  const replyPreview = createMemo(() => replyFoldSummary(fullText()));
+  const replyPreview = () => replyFoldSummary(fullText());
   const generatedImageShown = createMemo(() => {
     if (!props.message.imageGeneration) return false;
     const attachment = props.message.attachments?.[0];

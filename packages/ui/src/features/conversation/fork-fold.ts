@@ -9,6 +9,20 @@ const REPLY_FOLD_SUMMARY_CHARACTERS = 160;
 const LINE_PREFIX_MARKUP = /^\s*(?:#{1,6}\s+|>\s?|[-*+]\s+|\d+[.)]\s+)/u;
 const FENCE_LINE = /^\s*(?:`{3,}|~{3,})/u;
 const foldedReplies = new Set<string>();
+const expandedCodeBlocks = new Set<string>();
+
+export function codeBlockKey(code: string): string {
+  return `${code.length}:${code.slice(0, 64)}`;
+}
+
+export function isCodeBlockExpanded(key: string): boolean {
+  return expandedCodeBlocks.has(key);
+}
+
+export function setCodeBlockExpanded(key: string, expanded: boolean): void {
+  if (expanded) expandedCodeBlocks.add(key);
+  else expandedCodeBlocks.delete(key);
+}
 
 export function replyFoldSummary(text: string): { heading: string; summary: string } {
   const [heading = "", summary = ""] = leadingPlainLines(text, 2);

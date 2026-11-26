@@ -6,7 +6,13 @@ import { createEffect, createMemo, createSignal, For, onCleanup, Show, untrack }
 import { ScrollEdges } from "../../components/ScrollEdges";
 import { useText } from "../../text";
 import type { MessageCodeBlock } from "./DataTable";
-import { CODE_FOLD_MIN_LINES, CODE_FOLD_PREVIEW_LINES } from "./fork-fold";
+import {
+  CODE_FOLD_MIN_LINES,
+  CODE_FOLD_PREVIEW_LINES,
+  codeBlockKey,
+  isCodeBlockExpanded,
+  setCodeBlockExpanded,
+} from "./fork-fold";
 
 export interface CodeToken {
   text: string;
@@ -137,7 +143,13 @@ export function CodeBlock(props: {
   const { t } = useText();
   const [lines, setLines] = createSignal<CodeLine[]>(untrack(() => plainCodeLines(props.block.code)));
   const [copied, setCopied] = createSignal(false);
-  const [expanded, setExpanded] = createSignal(false);
+  const blockKey = () => codeBlockKey(props.block.code);
+  const [expanded, setExpanded] = createSignal(untrack(() => isCodeBlockExpanded(blockKey())));
+  const toggleExpanded = () => {
+    const next = !expanded();
+    setCodeBlockExpanded(blockKey(), next);
+    setExpanded(next);
+  };
   const [wrap, setWrap] = createSignal(false);
   const foldable = () => props.streaming !== true && lines().length > CODE_FOLD_MIN_LINES;
   const collapsed = () => foldable() && !expanded();
@@ -233,7 +245,7 @@ export function CodeBlock(props: {
               size="xs"
               class="message-code-fold"
               aria-expanded={expanded() ? "true" : "false"}
-              onClick={() => setExpanded(!expanded())}
+              onClick={toggleExpanded}
             >
               {expanded() ? t("chat.message.showLess") : t("chat.preview.expandLabel")}
             </Button>

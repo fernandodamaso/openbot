@@ -18,9 +18,11 @@ import type {
 } from "../conversation/conversation-types";
 import type { AgentThreadTabsState } from "./agent-thread-tabs";
 import { idleTabIds, rememberClosedTabs, takeClosedTab } from "./fork-tab-actions";
-import { threadPreview } from "./thread-previews";
+import { cachedThreadPreview, threadPreview } from "./thread-previews";
 
 type PromptEvent = Extract<AgentEvent, { type: "prompt" }>;
+
+const PREVIEW_READ_LIMIT = 20;
 
 export interface ConversationThreadsInput {
   agent: { id: string; updatedAt: string };
@@ -54,6 +56,7 @@ export function conversationThreads(input: ConversationThreadsInput): Conversati
     unread: (task) => tasks.unreadCount(task),
   };
   const lists = threadLists({ ...listInput, open: tabs.openIds(agentId), draft: tabs.hasDraft(agentId) });
+  const recentPreviewIds = new Set(lists.threads.slice(0, PREVIEW_READ_LIMIT).map((thread) => thread.id));
   const activeId = activeThreadId(lists.tabs, tabs.activeId(agentId));
   const open =
     activeId === MAIN_THREAD_ID
@@ -137,6 +140,7 @@ export function conversationThreads(input: ConversationThreadsInput): Conversati
       },
       onCloseToTheRight: (id) => {
         const index = lists.tabs.findIndex((tab) => tab.id === id);
+        if (index < 0) return;
         rememberClosedTabs(
           agentId,
           lists.tabs.slice(index + 1).map((tab) => tab.id),
@@ -145,7 +149,9 @@ export function conversationThreads(input: ConversationThreadsInput): Conversati
       },
       preview: (id) => {
         const task = list.find((entry) => entry.id === id);
-        return task ? threadPreview(tasks.readTask, agentId, task.id, task.updatedAt) : undefined;
+        if (!task) return undefined;
+        if (!recentPreviewIds.has(id)) return cachedThreadPreview(id);
+        return threadPreview(tasks.readTask, agentId, task.id, task.updatedAt);
       },
       onCloseIdle: () => {
         const ids = idleTabIds(lists.tabs, activeId);
