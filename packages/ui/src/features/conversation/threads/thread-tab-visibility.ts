@@ -36,21 +36,23 @@ export function useOffscreenTabs(tabs: () => readonly ThreadItem[]) {
   const schedule = () => {
     if (frame === 0) frame = requestAnimationFrame(measure);
   };
+  const trackStrip = (next: Element | undefined) => {
+    if (next === strip) return;
+    if (strip) {
+      strip.removeEventListener("scroll", schedule);
+      resize.unobserve(strip);
+    }
+    strip = next;
+    if (strip) {
+      strip.addEventListener("scroll", schedule, { passive: true });
+      resize.observe(strip);
+    }
+  };
   const measure = () => {
     frame = 0;
-    const found = anchor?.closest(".agent-threads-header")?.querySelector<HTMLElement>(".agent-threads-tabs");
-    const next = found ?? undefined;
-    if (next !== strip) {
-      if (strip) {
-        strip.removeEventListener("scroll", schedule);
-        resize.unobserve(strip);
-      }
-      strip = next;
-      if (strip) {
-        strip.addEventListener("scroll", schedule, { passive: true });
-        resize.observe(strip);
-      }
-    }
+    const header = anchor?.closest(".agent-threads-header");
+    if (!strip?.isConnected || strip.closest(".agent-threads-header") !== header)
+      trackStrip(header?.querySelector<HTMLElement>(".agent-threads-tabs") ?? undefined);
     const value = strip ? offscreenTabIds(strip) : new Set<string>();
     setHidden((current) => (sameIds(current, value) ? current : value));
   };
