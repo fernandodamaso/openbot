@@ -1,0 +1,231 @@
+.thread-artifacts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--openbot-space-3);
+}
+
+.thread-artifacts-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--openbot-space-1);
+  min-width: 0;
+  margin: 0 0 var(--openbot-space-3);
+  padding: 0;
+  border: 0;
+}
+
+.thread-artifacts-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--openbot-space-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.thread-artifacts-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--openbot-space-1);
+  padding: var(--openbot-space-0-5) var(--openbot-space-2);
+  border: 0;
+  border-radius: var(--openbot-radius-pill);
+  background: transparent;
+  color: var(--openbot-text-secondary);
+  font: inherit;
+  font-size: var(--openbot-text-sm);
+  cursor: pointer;
+  transition: background-color var(--openbot-duration-fast) ease;
+}
+
+.thread-artifacts-filter:hover {
+  background: var(--openbot-bg-control-hover);
+}
+
+.thread-artifacts-filter[aria-pressed="true"] {
+  background: var(--openbot-bg-control-active);
+  color: var(--openbot-text-primary);
+  font-weight: var(--openbot-weight-medium);
+}
+
+.thread-artifacts-count {
+  color: var(--openbot-text-muted);
+  font-size: var(--openbot-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.thread-artifacts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+  gap: var(--openbot-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.thread-artifacts-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--openbot-space-1);
+  width: 100%;
+  min-width: 0;
+  padding: var(--openbot-space-1);
+  border: 1px solid var(--openbot-border);
+  border-radius: var(--openbot-radius-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.thread-artifacts-thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--openbot-radius-sm);
+  object-fit: cover;
+}
+
+.thread-artifacts-thumb-missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--openbot-radius-sm);
+  background: var(--openbot-bg-control);
+  color: var(--openbot-text-muted);
+}
+
+.thread-artifacts-thumb-missing svg,
+.thread-artifacts-open svg {
+  width: var(--openbot-icon-md);
+  height: var(--openbot-icon-md);
+  flex-shrink: 0;
+}
+
+.thread-artifacts-caption {
+  overflow: hidden;
+  color: var(--openbot-text-secondary);
+  font-size: var(--openbot-text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thread-artifacts-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.thread-artifacts-row {
+  display: flex;
+  align-items: center;
+  gap: var(--openbot-space-2);
+  padding: var(--openbot-space-1) 0;
+  border-bottom: 1px solid var(--openbot-border);
+}
+
+.thread-artifacts-open {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--openbot-space-2);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--openbot-text-primary);
+  font: inherit;
+  font-size: var(--openbot-text-md);
+  text-align: start;
+  cursor: pointer;
+}
+
+.thread-artifacts-open > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thread-artifacts-tile .thread-artifacts-open {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.thread-artifacts-open > .thread-artifacts-code {
+  display: flex;
+  flex-direction: column;
+  gap: var(--openbot-space-0-5);
+  overflow: hidden;
+}
+
+.thread-artifacts-code-text {
+  overflow: hidden;
+  font-family: var(--openbot-font-mono);
+  font-size: var(--openbot-text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thread-artifacts-code-language {
+  overflow: hidden;
+  color: var(--openbot-text-muted);
+  font-size: var(--openbot-text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thread-artifacts-copy {
+  flex-shrink: 0;
+  padding: var(--openbot-space-0-5) var(--openbot-space-1);
+  border: 0;
+  border-radius: var(--openbot-radius-sm);
+  background: transparent;
+  color: var(--openbot-text-secondary);
+  font: inherit;
+  font-size: var(--openbot-text-sm);
+  cursor: pointer;
+}
+
+.thread-artifacts-copy:hover {
+  background: var(--openbot-bg-control-hover);
+  color: var(--openbot-text-primary);
+}
+
+.thread-artifacts-jump {
+  flex-shrink: 0;
+  padding: var(--openbot-space-0-5) var(--openbot-space-1);
+  border: 0;
+  border-radius: var(--openbot-radius-sm);
+  background: transparent;
+  color: var(--openbot-text-secondary);
+  font: inherit;
+  font-size: var(--openbot-text-sm);
+  cursor: pointer;
+}
+
+.thread-artifacts-jump:hover {
+  background: var(--openbot-bg-control-hover);
+  color: var(--openbot-text-primary);
+}
+
+.thread-artifacts-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--openbot-space-1);
+  padding: var(--openbot-space-4);
+  color: var(--openbot-text-muted);
+  font-size: var(--openbot-text-sm);
+  text-align: center;
+}
+
+.thread-artifacts-empty p {
+  margin: 0;
+}

@@ -26,6 +26,7 @@ import { SideQuestionPanel } from "@openbot/ui/features/conversation/SideQuestio
 import { SubagentPanel } from "@openbot/ui/features/conversation/Subagents";
 import { ThreadsPane } from "@openbot/ui/features/conversation/threads/ThreadsPane";
 import { VoicePill } from "@openbot/ui/features/conversation/VoicePill";
+import type { ThreadArtifact } from "@openbot/ui/features/files/extract-thread-artifacts";
 import { McpSignInRelayDialog } from "@openbot/ui/features/settings/McpSignInPage";
 import { useText } from "@openbot/ui/text";
 import { actionToast } from "../../action-toast";
@@ -56,6 +57,7 @@ import { useConversationController } from "./conversation-controller-context";
 import { type AgentNotificationLevelCalls, conversationRuntime } from "./conversation-runtime";
 import { useConversationViewScope } from "./conversation-scope";
 import { agentSkillsMode } from "./installed-skills-source";
+import { createMessageImageFiles } from "./message-image-files";
 import { desktopChatEventRoutinesApi } from "./routine-webhooks-api";
 import type { RoutineResultsCalls } from "./routines-port";
 import { pageTabsShown, showPageTabs } from "./side-panel-page-tabs";
@@ -203,6 +205,7 @@ export function ConversationPanels(panelProps: { onOpenUsage?: ((trigger: HTMLBu
     openExternalMessageUrl,
     openRoutineRunMessage,
     openSharedFile,
+    openWorkspaceFile,
     previewAttachment,
     openSidebarFileExternally,
     openWorkspaceFolder,
@@ -464,6 +467,32 @@ export function ConversationPanels(panelProps: { onOpenUsage?: ((trigger: HTMLBu
     if (channel) void replyJump.reveal(messageId, undefined, undefined);
     else void props.onOpenSearchMessage?.(messageId);
   }
+  const artifactImageFiles = createMessageImageFiles(conversationRuntime(props).agent);
+  const openThreadArtifact = (artifact: ThreadArtifact) => {
+    const target = artifact.target;
+    if (target.kind === "attachment") {
+      void previewAttachment(target.attachment);
+      return;
+    }
+    if (target.kind === "shared") {
+      openSharedFile(target.path, "here");
+      return;
+    }
+    if (target.kind === "workspace") {
+      openWorkspaceFile(target.asWritten ?? target.path, undefined, props.agent?.id);
+      return;
+    }
+    if (target.kind === "link") void openExternalMessageUrl(target.url);
+  };
+  const loadThreadArtifactImage = (artifact: ThreadArtifact): Promise<string | null> => {
+    const target = artifact.target;
+    if (target.kind === "attachment") return Promise.resolve(openedAttachmentUrl(target.attachment.previewUrl));
+    if (target.kind !== "workspace" && target.kind !== "shared") return Promise.resolve(null);
+    return artifactImageFiles.load(
+      { path: target.path, kind: target.kind },
+      { serverId: props.server?.id ?? "local", messageId: artifact.messageId, agentId: props.agent?.id },
+    );
+  };
   const channelBrowserPane = () => !channel || channel.browserOwner() !== null || browserTabs().length > 0;
   const sidePanelPanes = createMemo((): SidePanelPane[] => [
     ...(props.browserEnabled !== false && channelBrowserPane() ? (["browser"] as const) : []),
@@ -686,10 +715,13 @@ export function ConversationPanels(panelProps: { onOpenUsage?: ((trigger: HTMLBu
                 serverId={server().id}
                 source={source()}
                 conversationTitle={filesTitle()}
+                messages={props.messages}
                 canManage={canManageStorage(server())}
                 onClose={() => closeSidePanelPane("files")}
                 onPreviewFile={(file) => void previewAttachment(file)}
                 onShowMessage={showFileMessage}
+                onOpenArtifact={openThreadArtifact}
+                loadArtifactImage={loadThreadArtifactImage}
                 calls={props.runtime?.storageCalls}
                 workspaceAgents={workspaceAgents()}
                 onOpenWorkspace={openAgentWorkspace}
