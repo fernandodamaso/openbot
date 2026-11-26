@@ -41,6 +41,7 @@ export interface ThreadHeaderProps {
   onClose: (id: string) => void;
   onCloseOthers: (id: string) => void;
   onCloseToTheRight: (id: string) => void;
+  preview?: ((id: string) => string | undefined) | undefined;
   onCloseIdle?: (() => void) | undefined;
   canCloseIdle?: boolean | undefined;
   onReopenClosed?: (() => void) | undefined;

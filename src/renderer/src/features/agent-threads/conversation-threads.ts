@@ -18,6 +18,7 @@ import type {
 } from "../conversation/conversation-types";
 import type { AgentThreadTabsState } from "./agent-thread-tabs";
 import { idleTabIds, rememberClosedTabs, takeClosedTab } from "./fork-tab-actions";
+import { threadPreview } from "./thread-previews";
 
 type PromptEvent = Extract<AgentEvent, { type: "prompt" }>;
 
@@ -141,6 +142,10 @@ export function conversationThreads(input: ConversationThreadsInput): Conversati
           lists.tabs.slice(index + 1).map((tab) => tab.id),
         );
         tabs.closeToTheRight(agentId, id);
+      },
+      preview: (id) => {
+        const task = list.find((entry) => entry.id === id);
+        return task ? threadPreview(tasks.readTask, agentId, task.id, task.updatedAt) : undefined;
       },
       onCloseIdle: () => {
         const ids = idleTabIds(lists.tabs, activeId);

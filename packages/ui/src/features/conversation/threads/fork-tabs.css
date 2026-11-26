@@ -29,3 +29,77 @@
   background: var(--openbot-border);
   color: var(--openbot-text-muted);
 }
+
+/* Fork: searchable thread lists. The second line is the latest message, one line, dimmed. */
+.fork-thread-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+/* Fork: a two-line row needs more height than the one-line control height. */
+.threads-pane-row.ui-button:has(.fork-thread-preview) {
+  height: auto;
+  min-block-size: var(--openbot-control-lg);
+  padding-block: var(--openbot-space-1);
+}
+
+.fork-thread-text .threads-pane-title {
+  flex: none;
+}
+
+.fork-thread-preview {
+  overflow: hidden;
+  color: var(--openbot-text-muted);
+  font-size: var(--openbot-text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fork-thread-close {
+  flex: none;
+}
+
+/* Fork: the close button of an open thread sits at the end of its row, and the row makes room for it. */
+.threads-pane-close.ui-button {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: var(--openbot-space-1-5);
+  translate: 0 -50%;
+}
+
+.threads-pane-item:has(.threads-pane-close) .threads-pane-row.ui-button {
+  padding-inline-end: var(--openbot-control-xs);
+}
+
+.threads-pane-item:has(.threads-pane-close) .threads-pane-time {
+  visibility: hidden;
+}
+
+.threads-pane-item:has(.threads-pane-close) .threads-pane-beside.ui-button {
+  inset-inline-end: calc(var(--openbot-space-1-5) + var(--openbot-control-xs) + var(--openbot-space-0-5));
+}
+
+.fork-thread-filter {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  padding: var(--openbot-space-1-5) var(--openbot-space-2);
+  background: var(--openbot-bg-canvas);
+}
+
+.agent-threads-menu .fork-thread-filter {
+  background: var(--openbot-bg-sheet);
+}
+
+.fork-thread-filter-input {
+  inline-size: 100%;
+}
+
+.fork-thread-nomatch {
+  padding: var(--openbot-space-2);
+  color: var(--openbot-text-muted);
+  font-size: var(--openbot-text-sm);
+  text-align: center;
+}
