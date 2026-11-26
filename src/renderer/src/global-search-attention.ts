@@ -14,6 +14,7 @@ import { sidebarAgentThreads } from "./features/agent-threads/sidebar-agent-thre
 import { cachedThreadPreview } from "./features/agent-threads/thread-previews";
 import { createAgentActivity } from "./features/agents/agent-activity";
 import { useAgents } from "./features/agents/agents-context";
+import { useNextAttentionShortcut } from "./features/window/fork-shortcuts"; // Fork: Alt+U
 import { useNavigation } from "./navigation";
 import { useTurns } from "./turns";
 
@@ -127,5 +128,7 @@ export function useGlobalSearchAttention() {
     return ranked.sort((left, right) => left.rank - right.rank).map((entry) => entry.action);
   });
 
-  return () => [...attention(), ...threadActions()];
+  // Fork: the ranked list is also exposed for the Alt+U shortcut
+  useNextAttentionShortcut(attention);
+  return Object.assign(() => [...attention(), ...threadActions()], { attention });
 }

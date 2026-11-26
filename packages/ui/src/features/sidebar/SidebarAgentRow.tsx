@@ -1,10 +1,12 @@
 import { AppWindow, Badge, buttonVariants, Clock3, ContextMenu, Lock } from "@openbot/ui";
 import type { JSX } from "@solidjs/web";
 import { createSignal, Show } from "solid-js";
+import { TypingDots } from "../../components/TypingDots";
 import type { AgentProfile } from "../../data";
 import { useText } from "../../text";
 import { AgentAvatar } from "../agents/AgentAvatar";
 import { agentAccessLockLabel } from "../agents/agent-access";
+import { forkAgentActivity } from "./fork-activity";
 import { SidebarAgentContextMenu } from "./SidebarAgentContextMenu";
 import { SidebarAgentIndicator, SidebarWaitChip, SidebarWaitTooltip } from "./SidebarAgentIndicator";
 import { SidebarAgentThreads } from "./SidebarAgentThreads";
@@ -52,6 +54,8 @@ export function SidebarAgentRow(rowProps: { agent: AgentProfile; waiting?: boole
   };
   const detail = () => hiddenDetail() || wait()?.detail || rowProps.agent.preview;
   const labelDetail = () => (wait()?.detail ? "" : `. ${hiddenLabel()}${detail()}`);
+  // Fork: a working agent shows its live step text in the preview line (the label keeps the static detail)
+  const liveDetail = () => (state()?.kind === "working" ? forkAgentActivity(rowProps.agent.id) : undefined);
   const [menuOpen, setMenuOpen] = createSignal(false);
   const [rowElement, setRowElement] = createSignal<HTMLElement>();
   const [threadCardOpen, setThreadCardOpen] = createSignal(false);
@@ -147,8 +151,11 @@ export function SidebarAgentRow(rowProps: { agent: AgentProfile; waiting?: boole
               {(current) => <SidebarWaitChip reason={current().reason} />}
             </Show>
           </span>
-          <span class="agent-row-preview" dir="auto">
-            {detail()}
+          <span class="agent-row-preview" dir="auto" data-live={liveDetail() ? "" : undefined}>
+            <Show when={liveDetail()}>
+              <TypingDots class="agent-row-thinking-dots" />
+            </Show>
+            {liveDetail() ?? detail()}
           </span>
         </span>
         <Show when={state()}>

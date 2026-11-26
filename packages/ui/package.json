@@ -425,6 +425,8 @@
     "./features/sidebar/sidebar-tooltips.css": "./src/features/sidebar/sidebar-tooltips.css",
     "./features/sidebar/sidebar-threads.css": "./src/features/sidebar/sidebar-threads.css",
     "./features/sidebar/fork-attention.css": "./src/features/sidebar/fork-attention.css",
+    "./features/sidebar/fork-activity.css": "./src/features/sidebar/fork-activity.css",
+    "./features/sidebar/fork-activity": "./src/features/sidebar/fork-activity.ts",
     "./features/sidebar/createSidebarDragEngine": "./src/features/sidebar/createSidebarDragEngine.ts",
     "./features/sidebar/duplicate-section": "./src/features/sidebar/duplicate-section.ts",
     "./features/sidebar/sidebar-agent-order": "./src/features/sidebar/sidebar-agent-order.ts",
