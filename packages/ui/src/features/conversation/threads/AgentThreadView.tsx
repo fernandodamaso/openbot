@@ -220,7 +220,8 @@ export interface AgentThreadViewProps {
   onOpenFile?:
     | ((kind: "shared" | "workspace", agentId: string | undefined, path: string, asWritten?: string) => void)
     | undefined;
-  onOpenFilePath?: ((kind: "shared" | "workspace", path: string, agentId: string) => void) | undefined;
+  onOpenFileExternally?: ((kind: "shared" | "workspace", path: string, agentId: string) => void) | undefined;
+  onRevealFileExternally?: ((kind: "shared" | "workspace", path: string, agentId: string) => void) | undefined;
   onSelectAgent?: ((agentId: string, tabId?: string) => void) | undefined;
   changeMarkerActions?: ChangeMarkerActions | undefined;
   onPreview: (attachment: AttachmentSummary) => void;
@@ -577,7 +578,8 @@ export function AgentThreadView(props: AgentThreadViewProps) {
     return { pinned, onToggle: () => pins.onToggle(message.id, !pinned) };
   }
   function menuItems(message: AgentMessage, onCopy: (message: AgentMessage) => void): MessageMenuItemsProps {
-    const openFilePath = props.onOpenFilePath;
+    const openFile = props.onOpenFileExternally;
+    const revealFile = props.onRevealFileExternally;
     return {
       message,
       reactions: false,
@@ -589,7 +591,8 @@ export function AgentThreadView(props: AgentThreadViewProps) {
       pin: pinAction(message),
       onUseAsBackdrop: props.backdropAction?.(message),
       onDelete: deleteAction(message),
-      ...(openFilePath ? { onOpenFilePath: (file) => openFilePath(file.kind, file.path, props.agent.id) } : {}),
+      ...(openFile ? { onOpenFileExternally: (file) => openFile(file.kind, file.path, props.agent.id) } : {}),
+      ...(revealFile ? { onRevealFileExternally: (file) => revealFile(file.kind, file.path, props.agent.id) } : {}),
     };
   }
   function messageActions(message: AgentMessage): JSX.Element | undefined {

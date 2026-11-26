@@ -368,6 +368,7 @@ export const messages = {
   "chat.actions.more": "その他の操作",
   "chat.menu.reply": "返信",
   "chat.menu.copy": "メッセージをコピー",
+  "chat.menu.openFile": "ファイルを開く",
   "chat.menu.openFilePath": "ファイルパスを開く",
   "chat.menu.react": "リアクション",
   "chat.menu.branch": "ここから分岐",

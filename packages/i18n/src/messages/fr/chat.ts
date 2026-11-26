@@ -384,6 +384,7 @@ export const messages = {
   "chat.actions.more": "Plus d’actions",
   "chat.menu.reply": "Répondre",
   "chat.menu.copy": "Copier le message",
+  "chat.menu.openFile": "Ouvrir le fichier",
   "chat.menu.openFilePath": "Ouvrir le chemin du fichier",
   "chat.menu.react": "Réagir",
   "chat.menu.branch": "Dériver d’ici",

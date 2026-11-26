@@ -391,6 +391,7 @@ export const messages = {
   "chat.actions.more": "פעולות נוספות",
   "chat.menu.reply": "מענה",
   "chat.menu.copy": "העתקת ההודעה",
+  "chat.menu.openFile": "פתח קובץ",
   "chat.menu.openFilePath": "פתח נתיב קובץ",
   "chat.menu.react": "תגובה",
   "chat.menu.branch": "הסתעפות מכאן",

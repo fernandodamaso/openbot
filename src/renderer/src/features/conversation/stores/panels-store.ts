@@ -628,16 +628,29 @@ export function createPanelsStore(deps: PanelsStoreDeps) {
     );
   }
 
-  function openFilePathExternally(kind: "shared" | "workspace", path: string, agentId?: string) {
+  function openFileExternally(kind: "shared" | "workspace", path: string, agentId?: string) {
+    referencedFileExternally(kind, path, agentId, "open");
+  }
+
+  function revealFileExternally(kind: "shared" | "workspace", path: string, agentId?: string) {
+    referencedFileExternally(kind, path, agentId, "reveal");
+  }
+
+  function referencedFileExternally(
+    kind: "shared" | "workspace",
+    path: string,
+    agentId: string | undefined,
+    action: "open" | "reveal",
+  ) {
     const ownerAgentId = conversationOwnerId(deps.props);
     if (!ownerAgentId) return;
     const target = { agentId: ownerAgentId, serverId: deps.props.server?.id ?? "local" };
     const agent = conversationRuntime(deps.props).agent;
     const request =
       kind === "shared"
-        ? agent.openSharedFile({ path, action: "open" })
+        ? agent.openSharedFile({ path, action })
         : agentId
-          ? agent.openWorkspaceFile({ agentId, path, action: "open" })
+          ? agent.openWorkspaceFile({ agentId, path, action })
           : Promise.resolve();
     void request.catch((error) => deps.setComposerError(errorMessage(error, t("attachment.error.openFile")), target));
   }
@@ -945,7 +958,8 @@ export function createPanelsStore(deps: PanelsStoreDeps) {
     imageCopies,
     openSharedFile,
     openThreadFile,
-    openFilePathExternally,
+    openFileExternally,
+    revealFileExternally,
     openWorkspaceFile,
     openWorkspaceFolder,
     openWorkspaceFolderEntry,

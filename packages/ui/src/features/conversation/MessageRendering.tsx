@@ -16,6 +16,7 @@ import {
   ContextMenu,
   DropdownMenu,
   ExternalLink,
+  FolderOpen,
   Hash,
   Info,
   LoaderCircle,
@@ -1177,24 +1178,32 @@ export interface MessageMenuItemsProps {
   onUseAsBackdrop?: (() => void) | undefined;
   onDelete?: (() => void) | undefined;
   file?: MessageFileTarget | null | undefined;
-  onOpenFilePath?: ((file: MessageFileTarget) => void) | undefined;
+  onOpenFileExternally?: ((file: MessageFileTarget) => void) | undefined;
+  onRevealFileExternally?: ((file: MessageFileTarget) => void) | undefined;
 }
 
 export function MessageMenuItems(props: MessageMenuItemsProps) {
   const { t } = useText();
   const react = (emoji: MessageReaction) => props.onReact(props.message.reaction === emoji ? null : emoji);
   const sendToChannel = () => (props.sendToChannel?.channels.length ? props.sendToChannel : undefined);
-  const openFile = () => {
+  const fileAction = (run?: (file: MessageFileTarget) => void) => {
     const file = props.file;
-    const open = props.onOpenFilePath;
-    return file && open ? () => open(file) : undefined;
+    return file && run ? () => run(file) : undefined;
   };
   return (
     <>
-      <Show when={openFile()}>
+      <Show when={fileAction(props.onOpenFileExternally)}>
         {(open) => (
           <ContextMenu.Item onSelect={() => open()()}>
             <ExternalLink aria-hidden="true" />
+            <span>{t("chat.menu.openFile")}</span>
+          </ContextMenu.Item>
+        )}
+      </Show>
+      <Show when={fileAction(props.onRevealFileExternally)}>
+        {(reveal) => (
+          <ContextMenu.Item onSelect={() => reveal()()}>
+            <FolderOpen aria-hidden="true" />
             <span>{t("chat.menu.openFilePath")}</span>
           </ContextMenu.Item>
         )}

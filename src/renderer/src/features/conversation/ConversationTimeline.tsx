@@ -189,7 +189,8 @@ export function ConversationTimeline() {
     changeMarkerActions,
     openAgentSettingRow,
     openSharedFile,
-    openFilePathExternally,
+    openFileExternally,
+    revealFileExternally,
     openWorkspaceFile,
     openQuote,
     openTaggedReference,
@@ -1523,7 +1524,8 @@ export function ConversationTimeline() {
                   pin: pinAction(message() ?? initialMessage),
                   onUseAsBackdrop: backdropAction(message() ?? initialMessage),
                   onDelete: deleteAction(message() ?? initialMessage),
-                  onOpenFilePath: (file) => openFilePathExternally(file.kind, file.path, workspaceAgentId()),
+                  onOpenFileExternally: (file) => openFileExternally(file.kind, file.path, workspaceAgentId()),
+                  onRevealFileExternally: (file) => revealFileExternally(file.kind, file.path, workspaceAgentId()),
                 });
                 const rowMenu = () => (compactActions() ? () => <MessageMenuItems {...menuItems()} /> : undefined);
                 const rowCopy = () => (compactActions() ? undefined : messageActions.onCopy);

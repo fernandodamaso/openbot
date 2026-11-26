@@ -63,7 +63,8 @@ export function ConversationThread() {
     threadVoice,
     sideQuestionAvailable,
     openSideQuestion,
-    openFilePathExternally,
+    openFileExternally,
+    revealFileExternally,
     threadSearch,
     threadSearchOpen,
     threadSearchQuery,
@@ -298,7 +299,8 @@ export function ConversationThread() {
             onStop={() => current().threads.onStop()}
             onOpenLink={(url) => void openExternalMessageUrl(url)}
             onOpenFile={openThreadFile}
-            onOpenFilePath={openFilePathExternally}
+            onOpenFileExternally={openFileExternally}
+            onRevealFileExternally={revealFileExternally}
             onSelectAgent={props.onSelectAgent}
             changeMarkerActions={changeMarkerActions}
             onPreview={(attachment) => void previewAttachment(attachment)}

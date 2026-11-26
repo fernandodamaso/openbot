@@ -375,6 +375,7 @@ export const messages = defineMessages("chat", {
   "chat.actions.more": "More actions",
   "chat.menu.reply": "Reply",
   "chat.menu.copy": "Copy message",
+  "chat.menu.openFile": "Open file",
   "chat.menu.openFilePath": "Open file path",
   "chat.menu.react": "React",
   "chat.menu.branch": "Branch from here",

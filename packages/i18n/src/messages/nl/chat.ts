@@ -384,6 +384,7 @@ export const messages = {
   "chat.actions.more": "Meer acties",
   "chat.menu.reply": "Antwoorden",
   "chat.menu.copy": "Bericht kopiëren",
+  "chat.menu.openFile": "Bestand openen",
   "chat.menu.openFilePath": "Bestandspad openen",
   "chat.menu.react": "Reageren",
   "chat.menu.branch": "Hier aftakken",

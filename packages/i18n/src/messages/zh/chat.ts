@@ -374,6 +374,7 @@ export const messages = {
   "chat.actions.more": "更多操作",
   "chat.menu.reply": "回复",
   "chat.menu.copy": "复制消息",
+  "chat.menu.openFile": "打开文件",
   "chat.menu.openFilePath": "打开文件路径",
   "chat.menu.react": "回应",
   "chat.menu.branch": "从这里分支",

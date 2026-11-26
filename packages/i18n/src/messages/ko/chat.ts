@@ -375,6 +375,7 @@ export const messages = {
   "chat.actions.more": "추가 작업",
   "chat.menu.reply": "답장",
   "chat.menu.copy": "메시지 복사",
+  "chat.menu.openFile": "파일 열기",
   "chat.menu.openFilePath": "파일 경로 열기",
   "chat.menu.react": "반응",
   "chat.menu.branch": "여기서 분기",
