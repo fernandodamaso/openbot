@@ -26,12 +26,14 @@ export function idleTabIds(tabs: readonly ThreadItem[], activeId: string): strin
   return tabs.filter((tab) => tab.id !== activeId && isIdleTab(tab)).map((tab) => tab.id);
 }
 
-// Tabs that want the user come first, so an overflowing strip does not hide them. The draft tab and
+// The main tab stays first; tabs that want the user come next, so an overflowing strip does not hide them. The draft tab and
 // the order that the user chose are kept.
 export function threadsWantingUserFirst(tabs: readonly ThreadItem[]): ThreadItem[] {
-  const wanted = tabs.filter((tab) => tab.kind !== "draft" && threadWantsUser(tab));
-  const rest = tabs.filter((tab) => tab.kind === "draft" || !threadWantsUser(tab));
-  return [...wanted, ...rest];
+  const main = tabs.filter((tab) => tab.id === MAIN_THREAD_ID);
+  const others = tabs.filter((tab) => tab.id !== MAIN_THREAD_ID);
+  const wanted = others.filter((tab) => tab.kind !== "draft" && threadWantsUser(tab));
+  const rest = others.filter((tab) => tab.kind === "draft" || !threadWantsUser(tab));
+  return [...main, ...wanted, ...rest];
 }
 
 export function rememberClosedTabs(agentId: string, tabs: readonly ClosedTab[]): void {
