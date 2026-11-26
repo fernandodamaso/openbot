@@ -56,6 +56,7 @@ import {
 import { createSmoothHeightResize } from "./createSmoothHeightResize";
 import { DataTable, type MessageContentBlock, messageContentBlocks, reuseUnchangedBlocks } from "./DataTable";
 import { messageFileReferences } from "./FileReference";
+import { isReplyFolded, REPLY_FOLD_MIN_CHARACTERS, replyFoldSummary, setReplyFolded } from "./fork-fold";
 import { ImageGeneration } from "./ImageGeneration";
 import {
   type ImageCopies,
@@ -352,6 +353,21 @@ export function MessageBody(props: {
     else expandedLongMessages.delete(props.message.id);
     setExpanded(next);
   };
+  const replyFoldable = createMemo(
+    () =>
+      props.message.author === "agent" &&
+      props.message.streaming !== true &&
+      !streamingBody.revealing() &&
+      fullText().length >= REPLY_FOLD_MIN_CHARACTERS &&
+      !longMessage(),
+  );
+  const [replyFolded, setReplyFoldedState] = createSignal(isReplyFolded(props.message.id));
+  const toggleReplyFolded = () => {
+    const next = !replyFolded();
+    setReplyFolded(props.message.id, next);
+    setReplyFoldedState(next);
+  };
+  const replyPreview = createMemo(() => replyFoldSummary(fullText()));
   const generatedImageShown = createMemo(() => {
     if (!props.message.imageGeneration) return false;
     const attachment = props.message.attachments?.[0];
@@ -746,7 +762,12 @@ export function MessageBody(props: {
       <div class="message-content-resize" ref={(element) => (messageContentResize = element)}>
         <div class="message-content-blocks" ref={(element) => (messageContent = element)}>
           <StreamingRevealContext value={streamingBody.trail}>
-            <Show when={props.message.author === "agent" ? streamedBody() : props.message.body}>
+            <Show
+              when={
+                (props.message.author === "agent" ? streamedBody() : props.message.body) &&
+                !(replyFoldable() && replyFolded())
+              }
+            >
               <For each={contentBlocks()} keyed={false}>
                 {(block, index) => (
                   <Switch>
@@ -839,6 +860,26 @@ export function MessageBody(props: {
               <Show when={selectionInstruction()}>
                 {(selection) => <blockquote class="message-selection-quote">{selection().quote}</blockquote>}
               </Show>
+            </Show>
+            <Show when={replyFoldable()}>
+              <Show when={replyFolded()}>
+                <div class="fork-reply-folded">
+                  <p class="fork-reply-folded-heading">{replyPreview().heading}</p>
+                  <Show when={replyPreview().summary}>
+                    {(summary) => <p class="fork-reply-folded-summary">{summary()}</p>}
+                  </Show>
+                </div>
+              </Show>
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                class="fork-reply-fold-toggle"
+                aria-expanded={replyFolded() ? "false" : "true"}
+                onClick={toggleReplyFolded}
+              >
+                {replyFolded() ? t("chat.message.showFull") : t("chat.message.showLess")}
+              </Button>
             </Show>
           </StreamingRevealContext>
         </div>

@@ -66,6 +66,7 @@ import type { MediaApprovalControls } from "@openbot/ui/features/conversation/Me
 import {
   preferredMessageScrollBehavior,
   ScrollToLatestButton,
+  scrollToLatestMessage,
 } from "@openbot/ui/features/conversation/MessageNavigation";
 import {
   DeleteMessageDialog,
@@ -97,8 +98,10 @@ import {
   Show,
   untrack,
 } from "solid-js";
+import { ChatScrollRail } from "../ChatScrollRail";
 import { createComposerRowsResize } from "../createComposerRowsResize";
 import { type AgentThreadBranchSource, BranchDivider } from "./BranchDivider";
+import { createThreadScrollRail } from "./ThreadScrollRail";
 import { MAIN_THREAD_ID } from "./thread-types";
 
 const HOLD_TEXT = {
@@ -292,6 +295,7 @@ export function AgentThreadView(props: AgentThreadViewProps) {
   let scroller: HTMLElement | undefined;
   let messageList: HTMLDivElement | undefined;
   let atEnd = true;
+  const [awayFromEnd, setAwayFromEnd] = createSignal(false);
   let olderAnchor: { firstId: string | undefined; content: HTMLElement; top: number } | undefined;
   let autoLoadedFirstId: string | undefined | null = null;
   function firstVisibleRow(element: HTMLElement): HTMLElement | undefined {
@@ -344,12 +348,18 @@ export function AgentThreadView(props: AgentThreadViewProps) {
   const plainActivity = () => props.responseStyle === "natural";
   const activityLabel = (): AgentActivityLabel => (plainActivity() ? "Thinking it through…" : rotatingActivityLabel);
   const fades = createScrollFades();
+  const rail = createThreadScrollRail({
+    rows: () => props.messages,
+    question: (message) => (message.author === "you" ? message.body : undefined),
+    reply: (message) => (message.author === "you" ? undefined : message.body),
+  });
   createEffect(
     () => props.task?.id,
     (taskId) => {
       if (taskId === shownTaskId) return;
       shownTaskId = taskId;
       atEnd = true;
+      setAwayFromEnd(false);
       olderAnchor = undefined;
       autoLoadedFirstId = null;
       if (scroller) scroller.scrollTop = scroller.scrollHeight;
@@ -365,6 +375,7 @@ export function AgentThreadView(props: AgentThreadViewProps) {
       const { scrollTop, scrollHeight } = element;
       if (scrollHeight - scrollTop - element.clientHeight < STICK_DISTANCE) atEnd = true;
       else if (scrollTop < lastTop && scrollHeight >= lastHeight) atEnd = false;
+      setAwayFromEnd(scrollHeight - scrollTop - element.clientHeight >= STICK_DISTANCE);
       lastTop = scrollTop;
       lastHeight = scrollHeight;
       loadOlderNearTop(element);
@@ -375,6 +386,7 @@ export function AgentThreadView(props: AgentThreadViewProps) {
         olderAnchor = undefined;
         if (anchor.content.isConnected) element.scrollTop += contentTop(anchor.content, element) - anchor.top;
       } else if (atEnd) element.scrollTop = element.scrollHeight;
+      setAwayFromEnd(element.scrollHeight - element.scrollTop - element.clientHeight >= STICK_DISTANCE);
       loadOlderNearTop(element);
     });
     follow.observe(list);
@@ -770,13 +782,27 @@ export function AgentThreadView(props: AgentThreadViewProps) {
           setSelectionScope(element);
           fades.bind(element);
           props.scrollRef?.(element);
+          rail.ref(element);
         }}
         class={["conversation-scroll agent-thread-scroll", fades.classes()]}
         data-selection-scope=""
         aria-label={t("conversation.threads.view.label", { title: title() })}
         onScroll={fades.measure}
       >
-        <Show when={props.newerMessages}>
+        <ChatScrollRail {...rail.props} />
+        <Show
+          when={props.newerMessages}
+          fallback={
+            <Show when={awayFromEnd()}>
+              <ScrollToLatestButton
+                onClick={() => {
+                  atEnd = true;
+                  if (scroller) scrollToLatestMessage(scroller);
+                }}
+              />
+            </Show>
+          }
+        >
           {(newer) => <ScrollToLatestButton onClick={() => loadLatest(newer())} />}
         </Show>
         <div
