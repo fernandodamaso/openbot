@@ -74,6 +74,8 @@ export function useGlobalSearchAttention() {
               keywords: cachedThreadPreview(thread.id) ?? "",
               group: "threads",
               icon: Split,
+              agent,
+              thread: true,
               run: () => void selectAgent(agent.id, thread.id),
             }),
           ),
@@ -104,6 +106,8 @@ export function useGlobalSearchAttention() {
             detail,
             group: "attention",
             icon: rank === 0 ? MessageCircleQuestionMark : rank === 1 ? CircleAlert : Split,
+            agent,
+            thread: true,
             run: () => void selectAgent(agent.id, thread.id),
           },
         });
@@ -121,6 +125,7 @@ export function useGlobalSearchAttention() {
           detail: sidebarAgentStateLabel(state, t, format),
           group: "attention",
           icon: waiting ? MessageCircleQuestionMark : MessageCircle,
+          agent,
           run: () => void selectAgent(agent.id),
         },
       });

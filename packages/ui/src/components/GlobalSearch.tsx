@@ -19,6 +19,7 @@ import {
   Search,
   type Settings,
   Spinner,
+  Split,
   Tabs,
 } from "@openbot/ui";
 import type { AgentMessage, AgentProfile } from "@openbot/ui/data";
@@ -71,6 +72,8 @@ export interface GlobalSearchAction {
   label: string;
   group: "actions" | "settings" | "attention" | "threads";
   icon: typeof Settings;
+  agent?: AgentProfile | undefined;
+  thread?: boolean | undefined;
   detail?: string | undefined;
   keywords?: string;
   run: () => void;
@@ -560,7 +563,18 @@ function ResultRow(props: { result: GlobalSearchResult; query: string }) {
     case "action":
       return (
         <>
-          <ResultIcon icon={result.action.icon} />
+          <Show when={result.action.agent} fallback={<ResultIcon icon={result.action.icon} />}>
+            {(agent) => (
+              <span class="global-search-avatar-wrap">
+                <AgentAvatar agent={agent()} motion="hover" class="global-search-avatar" />
+                <Show when={result.action.thread}>
+                  <span class="global-search-avatar-mark" aria-hidden="true">
+                    <Split />
+                  </span>
+                </Show>
+              </span>
+            )}
+          </Show>
           <NamedRow name={result.action.label} detail={result.action.detail} query={props.query} />
         </>
       );

@@ -315,6 +315,34 @@
   flex: 0 0 auto;
 }
 
+.global-search-avatar-wrap {
+  position: relative;
+  display: grid;
+  width: var(--openbot-icon-lg);
+  height: var(--openbot-icon-lg);
+  flex: 0 0 auto;
+  place-items: center;
+}
+
+.global-search-avatar-mark {
+  position: absolute;
+  inset-block-end: calc(var(--openbot-icon-lg) * -0.18);
+  inset-inline-end: calc(var(--openbot-icon-lg) * -0.18);
+  display: grid;
+  width: var(--openbot-icon-sm);
+  height: var(--openbot-icon-sm);
+  border-radius: var(--openbot-radius-pill);
+  background: var(--openbot-bg-surface);
+  color: var(--openbot-text-muted);
+  place-items: center;
+}
+
+.global-search-avatar-mark > svg {
+  width: var(--openbot-icon-xs);
+  height: var(--openbot-icon-xs);
+  stroke-width: var(--openbot-icon-stroke);
+}
+
 .global-search-icon {
   display: grid;
   width: var(--openbot-icon-lg);
