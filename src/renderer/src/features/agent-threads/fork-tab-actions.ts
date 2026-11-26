@@ -6,8 +6,14 @@ import {
 
 const CLOSED_TABS_LIMIT = 20;
 
-// Closed side-thread tab ids, newest last. Kept in memory only, per agent.
-const closedTabs = new Map<string, string[]>();
+// A closed side-thread tab, with the strip position it had when it closed.
+export interface ClosedTab {
+  id: string;
+  index: number;
+}
+
+// Closed side-thread tabs, newest last. Kept in memory only, per agent.
+const closedTabs = new Map<string, ClosedTab[]>();
 
 // A side-thread tab is idle when its agent is not working, queued, waiting or failed,
 // it has no unread reply, and it is not awaiting an answer from the user.
@@ -19,19 +25,20 @@ export function idleTabIds(tabs: readonly ThreadItem[], activeId: string): strin
   return tabs.filter((tab) => tab.id !== activeId && isIdleTab(tab)).map((tab) => tab.id);
 }
 
-export function rememberClosedTabs(agentId: string, ids: readonly string[]): void {
-  const sides = ids.filter((id) => id !== MAIN_THREAD_ID && id !== DRAFT_THREAD_ID);
+export function rememberClosedTabs(agentId: string, tabs: readonly ClosedTab[]): void {
+  const sides = tabs.filter((tab) => tab.id !== MAIN_THREAD_ID && tab.id !== DRAFT_THREAD_ID);
   if (sides.length === 0) return;
-  const stack = (closedTabs.get(agentId) ?? []).filter((id) => !sides.includes(id));
+  const ids = sides.map((tab) => tab.id);
+  const stack = (closedTabs.get(agentId) ?? []).filter((tab) => !ids.includes(tab.id));
   closedTabs.set(agentId, [...stack, ...sides].slice(-CLOSED_TABS_LIMIT));
 }
 
 // Pops the most recently closed tab that can still be shown. Ids that cannot be shown are dropped.
-export function takeClosedTab(agentId: string, reopenable: (id: string) => boolean): string | undefined {
+export function takeClosedTab(agentId: string, reopenable: (id: string) => boolean): ClosedTab | undefined {
   const stack = closedTabs.get(agentId);
   while (stack && stack.length > 0) {
-    const id = stack.pop();
-    if (id !== undefined && reopenable(id)) return id;
+    const tab = stack.pop();
+    if (tab !== undefined && reopenable(tab.id)) return tab;
   }
   return undefined;
 }

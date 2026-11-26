@@ -45,6 +45,13 @@
   padding-block: var(--openbot-space-1);
 }
 
+/* Fork: two-line rows in the threads dropdown menu need more than the one-line item height. */
+.agent-threads-menu-item.agent-threads-menu-item:has(.fork-thread-preview) {
+  height: auto;
+  min-height: var(--openbot-control-lg);
+  padding-block: var(--openbot-space-1);
+}
+
 .fork-thread-text .threads-pane-title {
   flex: none;
 }

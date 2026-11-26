@@ -17,7 +17,7 @@ import type {
   SideThread,
 } from "../conversation/conversation-types";
 import type { AgentThreadTabsState } from "./agent-thread-tabs";
-import { idleTabIds, rememberClosedTabs, takeClosedTab } from "./fork-tab-actions";
+import { type ClosedTab, idleTabIds, rememberClosedTabs, takeClosedTab } from "./fork-tab-actions";
 import { cachedThreadPreview, threadPreview } from "./thread-previews";
 
 type PromptEvent = Extract<AgentEvent, { type: "prompt" }>;
@@ -66,6 +66,11 @@ export function conversationThreads(input: ConversationThreadsInput): Conversati
         : list.find((task) => task.id === activeId);
   const approval = open ? taskApproval(open, approvals) : undefined;
   const editable = tasks.editable();
+  // The strip position a tab had, so a reopened tab comes back where it was.
+  const closedEntries = (ids: readonly string[]): ClosedTab[] => {
+    const order = tabs.openIds(agentId);
+    return ids.map((id) => ({ id, index: Math.max(0, order.indexOf(id)) }));
+  };
   const olderMessages = (taskId: string): AgentThreadOlderMessages | undefined => {
     const older = tasks.olderMessages(taskId);
     return older ? { loading: older.loading, onLoad: () => void tasks.loadOlderMessages(agentId, taskId) } : undefined;
@@ -128,23 +133,17 @@ export function conversationThreads(input: ConversationThreadsInput): Conversati
       onOpen: (id) => tabs.open(agentId, id),
       onNew: () => tabs.startNew(agentId),
       onClose: (id) => {
-        rememberClosedTabs(agentId, [id]);
+        rememberClosedTabs(agentId, closedEntries([id]));
         tabs.close(agentId, id);
       },
       onCloseOthers: (id) => {
-        rememberClosedTabs(
-          agentId,
-          lists.tabs.filter((tab) => tab.id !== id).map((tab) => tab.id),
-        );
+        rememberClosedTabs(agentId, closedEntries(lists.tabs.filter((tab) => tab.id !== id).map((tab) => tab.id)));
         tabs.closeOthers(agentId, id);
       },
       onCloseToTheRight: (id) => {
         const index = lists.tabs.findIndex((tab) => tab.id === id);
         if (index < 0) return;
-        rememberClosedTabs(
-          agentId,
-          lists.tabs.slice(index + 1).map((tab) => tab.id),
-        );
+        rememberClosedTabs(agentId, closedEntries(lists.tabs.slice(index + 1).map((tab) => tab.id)));
         tabs.closeToTheRight(agentId, id);
       },
       preview: (id) => {
@@ -155,17 +154,19 @@ export function conversationThreads(input: ConversationThreadsInput): Conversati
       },
       onCloseIdle: () => {
         const ids = idleTabIds(lists.tabs, activeId);
-        rememberClosedTabs(agentId, ids);
+        rememberClosedTabs(agentId, closedEntries(ids));
         tabs.closeMany(agentId, ids);
       },
       canCloseIdle: idleTabIds(lists.tabs, activeId).length > 0,
       onReopenClosed: () => {
-        const id = takeClosedTab(
+        const closed = takeClosedTab(
           agentId,
           (candidate) =>
             !tabs.hidden().has(candidate) && list.some((task) => task.id === candidate && task.state !== "closed"),
         );
-        if (id !== undefined) tabs.open(agentId, id);
+        if (closed === undefined) return;
+        tabs.open(agentId, closed.id);
+        tabs.move(agentId, closed.id, closed.index);
       },
       onMove: (id, index) => tabs.move(agentId, id, index),
       onArchive: (id) => void tabs.archive(agentId, id),
