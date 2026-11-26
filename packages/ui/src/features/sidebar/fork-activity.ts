@@ -17,7 +17,7 @@ export function setForkTurnProgressReader(reader: ForkTurnProgressReader): void 
 /** Live step text of an agent's running turn. With a turnId, only when it is that turn. Reactive when the reader reads a store. */
 export function forkAgentActivity(agentId: string, turnId?: string | null): string | undefined {
   const progress = readTurnProgress(agentId);
-  if (!progress?.detail || progress.running !== true) return undefined;
+  if (!progress?.detail) return undefined;
   if (turnId !== undefined && turnId !== progress.turnId) return undefined;
   return progress.detail;
 }
