@@ -139,6 +139,8 @@ export interface SidebarAgentThreads {
   onDelete?: ((agentId: string, threadId: string) => void) | undefined;
   // Fork: latest message of a thread, for the second line of its row
   preview?: ((agentId: string, threadId: string) => string | undefined) | undefined;
+  // Fork: live step text of a running thread, shown instead of its preview; undefined when not running
+  live?: ((agentId: string, threadId: string) => string | undefined) | undefined;
 }
 
 export interface SidebarChatHistory {

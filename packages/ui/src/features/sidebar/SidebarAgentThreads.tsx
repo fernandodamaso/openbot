@@ -1,6 +1,7 @@
 import { Archive, Button, ChevronDown, ContextMenu, MessageCirclePlus, Popover, Trash2 } from "@openbot/ui";
 import type { JSX } from "@solidjs/web";
 import { createEffect, createMemo, createSignal, For, onCleanup, Show } from "solid-js";
+import { TypingDots } from "../../components/TypingDots";
 import { useText } from "../../text";
 import { ThreadStatusText, ThreadTabIcon } from "../conversation/threads/ThreadStatusMark";
 import { ThreadTitle } from "../conversation/threads/ThreadTitle";
@@ -100,7 +101,9 @@ function ThreadRow(props: {
   onOpen: () => void;
 }) {
   const { format } = useText();
-  const preview = () => props.model.preview?.(props.agentId, props.thread.id);
+  // Fork: a running thread shows its live step text; the cached preview is read only when there is none
+  const live = () => props.model.live?.(props.agentId, props.thread.id);
+  const text = () => live() ?? props.model.preview?.(props.agentId, props.thread.id);
   return (
     <ThreadRowItem
       model={props.model}
@@ -112,7 +115,7 @@ function ThreadRow(props: {
       <Button
         variant="ghost"
         class="sidebar-thread-row"
-        data-preview={preview() ? "" : undefined}
+        data-preview={text() ? "" : undefined}
         aria-current={props.current ? "page" : undefined}
         onClick={props.onOpen}
       >
@@ -122,10 +125,11 @@ function ThreadRow(props: {
         <ThreadTitle class="sidebar-thread-title" title={props.thread.title} />
         <ThreadStatusText status={props.thread.status} unread={props.thread.unread} />
         <span class="sidebar-thread-time">{sidebarMessageTime(props.thread.updatedAt, format)}</span>
-        <Show when={preview()}>
-          {(text) => (
-            <span class="sidebar-thread-preview" dir="auto">
-              {text()}
+        <Show when={text()}>
+          {(value) => (
+            <span class="sidebar-thread-preview" dir="auto" data-live={live() ? "" : undefined}>
+              {live() ? <TypingDots class="agent-row-thinking-dots" /> : null}
+              {value()}
             </span>
           )}
         </Show>
