@@ -2312,6 +2312,7 @@ export async function createApplicationServices({
       claudeUserSetup: () => claudeUserSetup.get().enabled,
       claudeCompactWindow: () => claudeCompactWindow.get().tokens,
       providerEnvironment: (provider) => providerEnvironmentSetting.resolve(provider),
+      systemProxyFetch: (url, init) => net.fetch(url, { ...init, credentials: "omit", cache: "no-store" }),
       customProviders: () => modelReasoning.configs(),
       customAgents: () => customAgents.configs(),
       mcpServers: () => service.enabledMcpServers(),

@@ -1061,6 +1061,7 @@ export class ProviderRuntime implements ProviderPort {
             const codexType = provider === "codex" ? this.#accounts.get(provider)?.type : undefined;
             if (codexType === "apiKey" || codexType === CODEX_MODEL_PROVIDER_ACCOUNT_TYPE) return null;
             const released = this.#released.has(provider) && !this.#clients.has(provider);
+            const accounts = ProviderAccounts.support(provider);
             const releasedCli = this.#releasedUsageCli(provider);
             if (releasedCli) {
               usage = yield* this.#readReleasedUsage(provider, releasedCli, defaultUsageModel(provider)).pipe(deadline);
@@ -1075,7 +1076,9 @@ export class ProviderRuntime implements ProviderPort {
               usage = yield* this.#refreshUsage(client, defaultUsageModel(provider), false).pipe(deadline);
               const first = usage.limits[0];
               const last = this.#lastUsage.get(provider);
-              if (last && !first?.primary && !first?.secondary && !usageWindowHasReset(last)) return last;
+              const leavesSession = Boolean(accounts && !isKeyAccountSupport(accounts) && accounts.usageLeavesSession);
+              if (last && !first?.primary && !first?.secondary && (leavesSession || !usageWindowHasReset(last)))
+                return last;
             }
           }
           const limit = usage.limits[0];
@@ -1177,7 +1180,8 @@ export class ProviderRuntime implements ProviderPort {
       codexType !== "apiKey" &&
       codexType !== CODEX_MODEL_PROVIDER_ACCOUNT_TYPE &&
       accounts &&
-      !isKeyAccountSupport(accounts)
+      !isKeyAccountSupport(accounts) &&
+      !accounts.usageLeavesSession
       ? cli
       : undefined;
   }
