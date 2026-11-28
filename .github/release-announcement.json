@@ -1,10 +1,10 @@
 {
-  "version": "0.80.0",
+  "version": "0.81.1",
   "highlights": [
-    "Update your joined servers to this version too. It makes a server with a large chat history fast again after 0.79.0, and the new features below work there only then.",
-    "Use the OpenBot Apple Watch app when OpenBot on iPhone is closed. Your server answers the watch directly, end to end encrypted.",
-    "See the pointer and the selected step of each other person who has the same workflow open.",
-    "Spread agents over all your pooled provider accounts with the new Spread choice in Settings › Providers.",
-    "Type with no lag while an agent writes its reply, and use much less memory in long chats with many images."
+    "See agent photos, channel pictures and image previews of a joined server again in the desktop app.",
+    "Connect to your servers again within seconds after a Signal update, not after about 5 minutes.",
+    "Use Gemini agents with many apps connected: a turn that loaded OpenBot's tools slowly no longer shows as failed.",
+    "Send /compact to a Claude agent with no false \"no answer\" error.",
+    "Read web terminals in the agent browser, such as the Proxmox console, at normal text size again."
   ]
 }

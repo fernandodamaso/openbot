@@ -1,4 +1,5 @@
 import { AppLogo, type AppLogoVariant, ProviderLogo } from "@openbot/brand";
+import type { CreditMediaModel } from "@openbot/contracts/credit-media";
 import { usagePaceRemainingPercent, usageTone } from "@openbot/team-client/plan-limits";
 import {
   Bot,
@@ -25,11 +26,7 @@ import {
   Waypoints,
 } from "@openbot/ui";
 import { AccountUsageDetails, AccountUsageWindowList } from "@openbot/ui/features/account/AccountUsageDetails";
-import {
-  type AccountUsageProviderRow,
-  type AccountUsageWindowRow,
-  accountUsageRowKey,
-} from "@openbot/ui/features/account/account-usage-view";
+import { type AccountUsageProviderRow, accountUsageRowKey } from "@openbot/ui/features/account/account-usage-view";
 import { useText } from "@openbot/ui/text";
 import { Dynamic, type JSX } from "@solidjs/web";
 import { createMemo, createSignal, For, onCleanup, onSettled, Show } from "solid-js";
@@ -161,13 +158,22 @@ function UsageCard(props: { rows: AccountUsageProviderRow[] }) {
   );
 }
 
-const RING = { size: 34, stroke: 2.25, spacing: 4.5, tick: 1.6 };
-const RAIL_CLOCK_MS = 30_000;
+const RING = { size: 34, stroke: 2.25, spacing: 4.5, paceTick: 3.75, paceClockMs: 30_000 };
+
+function paceTick(radius: number, pacePercent: number) {
+  const angle = (pacePercent / 100) * 2 * Math.PI;
+  const point = (distance: number) => ({
+    x: RING.size / 2 + distance * Math.cos(angle),
+    y: RING.size / 2 + distance * Math.sin(angle),
+  });
+  const inner = point(radius - RING.paceTick / 2);
+  const outer = point(radius + RING.paceTick / 2);
+  return { x1: inner.x, y1: inner.y, x2: outer.x, y2: outer.y };
+}
 
 function UsageRings(props: {
   row: AccountUsageProviderRow;
   shared: readonly AccountUsageProviderRow[];
-  now: number;
   onOpen: (button: HTMLElement) => void;
 }) {
   const { t, format } = useText();
@@ -190,10 +196,10 @@ function UsageRings(props: {
   };
   const windows = () => [...ringRow().ringWindows].reverse().slice(0, 2);
   const unavailable = () => props.row.readFailed && windows().length === 0;
-  const pace = (window: AccountUsageWindowRow) =>
-    usagePaceRemainingPercent(window.durationMins, window.resetsAt, props.now);
   const outerRadius = (RING.size - RING.stroke) / 2;
-  const center = RING.size / 2;
+  const [now, setNow] = createSignal(Date.now());
+  const clock = window.setInterval(() => setNow(Date.now()), RING.paceClockMs);
+  onCleanup(() => window.clearInterval(clock));
   return (
     <RailButton
       label={label()}
@@ -225,19 +231,21 @@ function UsageRings(props: {
                   stroke-dasharray={`${window().remainingPercent} 100`}
                 />
               </Show>
-              <Show when={pace(window())}>
-                {(percent) => (
-                  <line
-                    class="window-rail-usage-pace"
-                    x1={center + outerRadius - index * RING.spacing - RING.tick}
-                    y1={center}
-                    x2={center + outerRadius - index * RING.spacing + RING.tick}
-                    y2={center}
-                    stroke-width={1.5}
-                    stroke-linecap="round"
-                    transform={`rotate(${percent() * 3.6} ${center} ${center})`}
-                  />
-                )}
+              <Show when={usagePaceRemainingPercent(window().durationMins, window().resetsAt, now())}>
+                {(pace) => {
+                  const tick = () => paceTick(outerRadius - index * RING.spacing, pace());
+                  return (
+                    <line
+                      class="window-rail-usage-pace"
+                      x1={tick().x1}
+                      y1={tick().y1}
+                      x2={tick().x2}
+                      y2={tick().y2}
+                      stroke-width={1.5}
+                      stroke-linecap="round"
+                    />
+                  );
+                }}
               </Show>
             </g>
           )}
@@ -362,6 +370,7 @@ function CreditsRailButton(props: {
   walletName: string | null | undefined;
   onMove: (() => void) | undefined;
   onOpenPrices: (() => void) | undefined;
+  creditModels: readonly CreditMediaModel[] | undefined;
   onOpen: () => void;
 }) {
   const { t } = useText();
@@ -380,6 +389,7 @@ function CreditsRailButton(props: {
           walletName={props.walletName}
           onMove={props.onMove}
           onOpenPrices={props.onOpenPrices}
+          creditModels={props.creditModels}
           onBuy={props.onOpen}
         />
       }
@@ -518,6 +528,7 @@ export interface PageRailProps {
   creditWalletName?: string | null | undefined;
   onCreditMove?: (() => void) | undefined;
   onCreditPrices?: (() => void) | undefined;
+  creditModels?: readonly CreditMediaModel[] | undefined;
   hiddenItems?: readonly PageRailHideableItem[] | undefined;
   onHiddenChange?: ((item: PageRailHideableItem, hidden: boolean) => void) | undefined;
   onSettings: (button: HTMLElement) => void;
@@ -675,9 +686,6 @@ export function PageRail(props: PageRailProps) {
       .map((row) => ({ row, shared: rows.filter((other) => owner(other) === row) }));
   });
   const [ringSlots, setRingSlots] = createSignal(START_RING_PLACES);
-  const [now, setNow] = createSignal(Date.now());
-  const clock = window.setInterval(() => setNow(Date.now()), RAIL_CLOCK_MS);
-  onCleanup(() => window.clearInterval(clock));
   const ringLayout = createMemo(() => {
     if (rings().length <= ringSlots()) return { shown: rings(), more: [] };
     const all = providerRings(rings());
@@ -821,7 +829,7 @@ export function PageRail(props: PageRailProps) {
             }}
           >
             <For each={ringLayout().shown} keyed={(ring) => accountUsageRowKey(ring.row)}>
-              {(ring) => <UsageRings row={ring().row} shared={ring().shared} now={now()} onOpen={props.onUsage} />}
+              {(ring) => <UsageRings row={ring().row} shared={ring().shared} onOpen={props.onUsage} />}
             </For>
             <Show when={ringLayout().more.length > 0}>
               <MoreUsageRings rings={ringLayout().more} onOpen={props.onUsage} />
@@ -845,6 +853,7 @@ export function PageRail(props: PageRailProps) {
                   walletName={props.creditWalletName}
                   onMove={props.onCreditMove}
                   onOpenPrices={props.onCreditPrices}
+                  creditModels={props.creditModels}
                   onOpen={() => onCredits()()}
                 />
               )}

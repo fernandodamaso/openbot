@@ -74,6 +74,7 @@ export interface ChatMessageRowProps {
   loadImageFile?: ((file: MessageImageFile) => Promise<string | null>) | undefined;
   onDownloadImageFile?: ((file: MessageImageFile) => void) | undefined;
   macWindowControls?: boolean | undefined;
+  remoteContent?: boolean | undefined;
 }
 
 export function ChatMessageRow(props: ChatMessageRowProps): JSX.Element {
@@ -194,6 +195,7 @@ export function ChatMessageRow(props: ChatMessageRowProps): JSX.Element {
       loadImageFile={props.loadImageFile}
       onDownloadImageFile={props.onDownloadImageFile}
       macWindowControls={props.macWindowControls}
+      remoteContent={props.remoteContent}
     />
   );
   const bubble = (content: JSX.Element): JSX.Element => (

@@ -1519,6 +1519,10 @@ still uses the sandbox. The downtime is the export, the copy, the import and the
    - each directory that the customer added in `/opt`, `/usr/local` and `/usr/local/lib`, and each
      npm package for all users. A directory that programs of root read, such as
      `/usr/local/lib/systemd` or `/usr/local/lib/python3.12`, stays out, and the report names it.
+     `/usr/local/lib/openbot-pool`, which `offer` installs on a pool machine, also stays out: it is
+     not of the customer, and each pool machine has its own copy.
+     A pool machine (it has `/etc/openbot-pool/host`) has no boat image, so its export does not
+     report an unknown image.
    - the Hermes CLI of the image when its sign-in file in the home has a sign-in. OpenBot does not
      download Hermes as it downloads the other provider CLIs. An empty file, a file with only `{}`, or
      the `.env` that the image writes for Hermes is not a sign-in.
@@ -1536,7 +1540,9 @@ still uses the sandbox. The downtime is the export, the copy, the import and the
    The move also does not copy files of the customer in other folders outside the home, such as
    Obsidian vaults in `/srv` (issue #8871). `packages` names each folder, one level below the top
    (`/srv/vaults`) or two in `/var` (`/var/lib/syncthing`), that has a file of `user` outside the paths
-   above, `/usr`, `/tmp`, `/var/log`, `/var/cache` and `/var/crash`, also on another mount.
+   above, `/usr`, `/tmp`, `/var/log`, `/var/cache`, `/var/crash`, `/var/lib/docker` and
+   `/var/lib/containerd`, also on another mount. The two Docker folders hold images and containers,
+   which the move does not copy (see below).
    `leaseweb-pool.ts move` then stops before the downtime, and the server stays on boat. It also stops
    when the search fails. With `--folders=<folder>,...`, the move copies these folders too: `export`
    archives them, and `import` makes each one as a new folder of `user` and restores it as `user`, as it

@@ -324,6 +324,7 @@ export function MessageBody(props: {
   macWindowControls?: boolean | undefined;
   showFull?: boolean | undefined;
   open?: boolean | undefined;
+  remoteContent?: boolean | undefined;
 }) {
   const { t } = useText();
   const streamingBody = createStreamingBody(
@@ -662,6 +663,7 @@ export function MessageBody(props: {
       onOpenWorkspaceFile={props.onOpenWorkspaceFile}
       onOpenQuote={props.onOpenQuote}
       onOpenTag={props.onOpenTag}
+      remoteContent={props.remoteContent}
     />
   );
 
@@ -814,6 +816,7 @@ export function MessageBody(props: {
                                 kind={preview()}
                                 streaming={streamingBody.revealing() && index === contentBlocks().length - 1}
                                 onOpenLink={props.onOpenLink}
+                                remoteContent={props.remoteContent}
                               />
                             )}
                           </Show>
@@ -843,6 +846,7 @@ export function MessageBody(props: {
                             showCitationFooter={index === lastTextBlockIndex()}
                             streaming={streamingBody.revealing() && index === contentBlocks().length - 1}
                             streamingTailAfter={textTailAfter()[index]}
+                            remoteContent={props.remoteContent}
                           />
                         </div>
                       )}

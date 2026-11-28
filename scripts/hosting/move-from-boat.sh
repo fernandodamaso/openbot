@@ -170,7 +170,7 @@ movable_tree() {
 added_trees() {
   local path name entry
   for path in /opt/* /usr/local/* /usr/local/lib/*; do
-    [ -d "$path" ] && [ ! -L "$path" ] || continue
+    [ -d "$path" ] && [ ! -L "$path" ] && [ "$path" != "$OFFER_INSTALL" ] || continue
     name=${path##*/}
     case ${path%/*} in
       /opt) listed "$name" "$BASE_OPT" && continue ;;
@@ -315,7 +315,7 @@ customer_folders() {
   uid=$(id -u "$SERVICE_USER")
   find / \( -path /proc -o -path /sys -o -path /dev -o -path /run -o -path /tmp -o -path /var/tmp \
     -o -path /home -o -path "$KEYRING_HOME" -o -path /opt -o -path /usr -o -path /snap -o -path /var/spool/cron \
-    -o -path /var/lib/docker -o -path /var/cache -o -path /var/crash -o -path /var/log \
+    -o -path /var/lib/docker -o -path /var/lib/containerd -o -path /var/cache -o -path /var/crash -o -path /var/log \
     -o -path '/var/lib/ascii*' -o -path /var/lib/ariana \) -prune \
     -o ! -type d -uid "$uid" -print |
     awk -F/ '{ n = $2 == "var" ? 4 : 3; if (n > NF - 1) n = NF - 1; f = ""
@@ -585,7 +585,7 @@ export_data() {
     # shellcheck disable=SC2086
     du -sh $trees | sed 's/^/  /'
   fi
-  if ! listed "$(cat "$USER_HOME/.base-image-version" 2>/dev/null)" "$BASE_IMAGES"; then
+  if [ ! -e "$OFFER/host" ] && ! listed "$(cat "$USER_HOME/.base-image-version" 2>/dev/null)" "$BASE_IMAGES"; then
     echo "This sandbox has a boat image that the lists of this script do not know. Make sure that the directories above are not from the image."
   fi
   echo "OpenBot stays stopped until this sandbox stops. Do not start it here after the VPS runs."

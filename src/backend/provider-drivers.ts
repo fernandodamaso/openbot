@@ -91,6 +91,7 @@ import {
   CUSTOM_ENDPOINT_SILENCE_MS,
   type CustomProviderSource,
   clearedInheritedOpenCodeKeyEnv,
+  customProviderSecretValues,
   customProvidersOn,
   hasCustomProviderCredentials,
   OPENCODE_GO_PROVIDER,
@@ -624,6 +625,11 @@ function openCodeEndpoints(context: ProviderClientContext): CustomProviderSource
   return customProvidersOn(context.customProviders, "opencode");
 }
 
+function openCodeEndpointSecrets(context: ProviderClientContext): () => readonly string[] {
+  const endpoints = openCodeEndpoints(context);
+  return () => customProviderSecretValues(endpoints());
+}
+
 function piProfileClient(
   provider: "pi" | KeyOnlyProviderId,
   cli: AgentCliInfo,
@@ -882,6 +888,7 @@ export const BUILT_IN_PROVIDER_DRIVERS: readonly BuiltInProviderDriver[] = [
         flavor: OPENCODE_ACP_FLAVOR,
         argv: ["acp"],
         env: {},
+        redactValues: openCodeEndpointSecrets(context),
         ...(confinement ? { confine: (target) => confineSpawnTarget(target, confinement, openCodeStatePaths()) } : {}),
         extraEnv: () => {
           const agentEnvironment = context.agentEnvironment?.();
@@ -959,6 +966,7 @@ export const BUILT_IN_PROVIDER_DRIVERS: readonly BuiltInProviderDriver[] = [
         argv: ["acp"],
         profileGeneration: true,
         env: {},
+        redactValues: openCodeEndpointSecrets(context),
         extraEnv: () => ({
           ...opencodeEnv(cli),
           ...openCodeConfigEnv(OPENCODE_PROFILE_CONFIG, openCodeEndpoints(context), context.apiKey("opencode")),

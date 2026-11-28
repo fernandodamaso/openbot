@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { DiscordDelivery } from "@openbot/contracts/signal-protocol/discord-api";
-import { DISCORD_ROUTE_TTL_SECONDS, type DiscordRouteGuild } from "@openbot/contracts/signal-protocol/discord-route";
+import type { DiscordRouteGuild } from "@openbot/contracts/signal-protocol/discord-route";
 import type { GitHubRouteRepository } from "@openbot/contracts/signal-protocol/github-route";
 import {
   INGRESS_QUEUE_CAPABILITY,
@@ -8,7 +8,7 @@ import {
   isIngressQueueKey,
   type QueuedSignalMessage,
 } from "@openbot/contracts/signal-protocol/ingress-queue";
-import { SLACK_ROUTE_TTL_SECONDS, type SlackRouteTeam } from "@openbot/contracts/signal-protocol/slack-route";
+import type { SlackRouteTeam } from "@openbot/contracts/signal-protocol/slack-route";
 import {
   TELEGRAM_CAPABILITY,
   TELEGRAM_ROUTE_TTL_SECONDS,
@@ -29,11 +29,7 @@ import {
   watchProofMessage,
   watchSealedDigest,
 } from "@openbot/contracts/signal-protocol/watch-relay";
-import {
-  WEBHOOK_ROUTE_TTL_SECONDS,
-  type WebhookRoute,
-  type WebhookSignatureFormat,
-} from "@openbot/contracts/signal-protocol/webhook-route";
+import type { WebhookRoute, WebhookSignatureFormat } from "@openbot/contracts/signal-protocol/webhook-route";
 import { sourceText } from "@openbot/i18n/source";
 import { Context, Deferred, Effect, Fiber, Layer, Result, Schema } from "effect";
 import { IngressQueue, queueRouteKey, type RouteWake, type RouteWaker } from "./ingress-queue";
@@ -46,6 +42,7 @@ import {
   SIGNAL_CLIENT_RECONNECT_GRACE_MS,
   SIGNAL_DEFAULT_RECONNECT_GRACE_MS,
   SIGNAL_MESSAGE_BYTES_LIMIT,
+  SIGNAL_SESSIONS_ENDED_LIMIT,
   type SignalClientMessage,
   type SignalErrorCode,
   type SignalServerMessage,
@@ -59,14 +56,17 @@ import { RemoteTokenError, type RemoteTokenUnavailableError, type TelegramChatLi
 
 interface SlackRoute {
   teams: SlackRouteTeam[];
+  issuedAt?: number | undefined;
 }
 
 interface DiscordRoute {
   guilds: DiscordRouteGuild[];
+  issuedAt?: number | undefined;
 }
 
 interface WebhookRouteTicket {
   routes: WebhookRoute[];
+  issuedAt?: number | undefined;
 }
 
 interface GitHubRoute {
@@ -75,6 +75,7 @@ interface GitHubRoute {
 
 interface TelegramRoute {
   chats: TelegramRouteChat[];
+  issuedAt?: number | undefined;
 }
 
 export interface RemoteTokenProvider {
@@ -325,9 +326,11 @@ const RATE_WINDOW_MILLISECONDS = 60_000;
 const SIGNAL_HELLO_DEADLINE_MILLISECONDS = 30_000;
 const TURN_CREDENTIAL_REUSE_MILLISECONDS = 5 * 60_000;
 const MAXIMUM_SOCKETS_PER_HOST = 4;
-const INITIAL_TICKET_TTL_MILLISECONDS = 3 * 60_000;
+const TICKET_CLOCK_SKEW_SECONDS = 60;
 const MAXIMUM_EXPIRATION_TIMER_MILLISECONDS = 24 * 60 * 60_000;
 const INGRESS_RATE_FACTOR = 10;
+const HOST_RATE_FACTOR = 10;
+const ENDED_SESSION_MEMORY_SECONDS = 24 * 60 * 60;
 const SLACK_TEAM_RATE_FACTOR = 2;
 const WEBHOOK_WAKE_RATE_FACTOR = 1 / 10;
 const WEBHOOK_WAKE_TOTAL_RATE_FACTOR = 1;
@@ -381,12 +384,9 @@ export class SignalService {
   readonly #usedTicketIds = new Map<string, number>();
   readonly #revokedEpochs = new Map<string, number>();
   readonly #revokedSessions = new Map<string, number>();
+  readonly #endedHostSessions = new Map<string, Map<string, number>>();
   readonly #rateWindows = new Map<string, { startedAt: number; count: number }>();
-  readonly #validateInitialTicketsUntil = Date.now() + INITIAL_TICKET_TTL_MILLISECONDS;
-  readonly #validateSlackRoutesUntil = Date.now() + SLACK_ROUTE_TTL_SECONDS * 1_000;
-  readonly #validateTelegramRoutesUntil = Date.now() + TELEGRAM_ROUTE_TTL_SECONDS * 1_000;
-  readonly #validateDiscordRoutesUntil = Date.now() + DISCORD_ROUTE_TTL_SECONDS * 1_000;
-  readonly #validateWebhookRoutesUntil = Date.now() + WEBHOOK_ROUTE_TTL_SECONDS * 1_000;
+  readonly #ticketsIssuedBeforeStartUntil = Math.floor(Date.now() / 1_000) + TICKET_CLOCK_SKEW_SECONDS;
   #lastRatePruneAt = 0;
   readonly #metrics: SignalMetrics = {
     acceptedConnections: 0,
@@ -795,8 +795,10 @@ export class SignalService {
     if (!succeeded) this.#metrics.discordApiFailures += 1;
   }
 
-  revokeSession(sessionId: string): void {
-    this.#revokedSessions.set(sessionId, Math.floor(Date.now() / 1_000) + 24 * 60 * 60);
+  revokeSession(sessionId: string, hostId: string): void {
+    const expiresAt = Math.floor(Date.now() / 1_000) + ENDED_SESSION_MEMORY_SECONDS;
+    this.#revokedSessions.set(sessionId, expiresAt);
+    this.#rememberEndedHostSession(hostId, sessionId, expiresAt);
     this.#tokens.revokeSession?.(sessionId);
     for (const connection of [...this.#connections.values()]) {
       if (connection.sessionId === sessionId) this.#dropConnection(connection.id, connection.client.id);
@@ -807,6 +809,28 @@ export class SignalService {
         this.#fail(peer.socket, "session_revoked", "The remote session ended.", 1008);
       }
     }
+    for (const socketId of this.#hosts.get(hostId) ?? []) {
+      const host = this.#peers.get(socketId);
+      if (host) this.#send(host.socket, { type: "sessions-ended", version: 1, sessionIds: [sessionId] });
+    }
+  }
+
+  #rememberEndedHostSession(hostId: string, sessionId: string, expiresAt: number): void {
+    const sessions = this.#endedHostSessions.get(hostId) ?? new Map<string, number>();
+    sessions.delete(sessionId);
+    sessions.set(sessionId, expiresAt);
+    for (const oldest of sessions.keys()) {
+      if (sessions.size <= SIGNAL_SESSIONS_ENDED_LIMIT) break;
+      sessions.delete(oldest);
+    }
+    this.#endedHostSessions.set(hostId, sessions);
+  }
+
+  #sendEndedHostSessions(host: AuthenticatedPeer): void {
+    this.#pruneReplayCache();
+    const sessions = this.#endedHostSessions.get(host.claims.hostId);
+    if (!sessions || sessions.size === 0) return;
+    this.#send(host.socket, { type: "sessions-ended", version: 1, sessionIds: [...sessions.keys()] });
   }
 
   readonly deliverSlack = Effect.fn("Signal.deliverSlack")((appId: string, teamId: string, delivery: SlackDelivery) => {
@@ -1387,7 +1411,7 @@ export class SignalService {
         const authentication = yield* Effect.gen({ self: this }, function* () {
           const initial = yield* Effect.gen({ self: this }, function* () {
             const claims = yield* tokens.verifyTicket(message.token);
-            if (Date.now() < this.#validateInitialTicketsUntil && !(yield* tokens.validateClaims(claims))) {
+            if (this.#issuedBeforeStart(claims.iat) && !(yield* tokens.validateClaims(claims))) {
               return yield* new RemoteTokenError({ message: "The remote session is not active." });
             }
             return claims;
@@ -1423,7 +1447,7 @@ export class SignalService {
             if (message.slackRoute) {
               if (!tokens.verifySlackRoute) return yield* new RemoteTokenError({ message: "Slack route required." });
               slackRoute = yield* tokens.verifySlackRoute(message.slackRoute, claims.hostId);
-              if (Date.now() < this.#validateSlackRoutesUntil) {
+              if (this.#issuedBeforeStart(slackRoute.issuedAt)) {
                 if (!tokens.validateSlackRoute)
                   return yield* new RemoteTokenError({ message: "Slack route validation required." });
                 const linked = new Set(yield* tokens.validateSlackRoute(claims.hostId, slackRoute.teams));
@@ -1434,7 +1458,7 @@ export class SignalService {
               if (!tokens.verifyDiscordRoute)
                 return yield* new RemoteTokenError({ message: "Discord route verification required." });
               discordRoute = yield* tokens.verifyDiscordRoute(message.discordRoute, claims.hostId);
-              if (Date.now() < this.#validateDiscordRoutesUntil) {
+              if (this.#issuedBeforeStart(discordRoute.issuedAt)) {
                 if (!tokens.validateDiscordRoute)
                   return yield* new RemoteTokenError({ message: "Discord route validation required." });
                 const linked = new Set(yield* tokens.validateDiscordRoute(claims.hostId, discordRoute.guilds));
@@ -1445,7 +1469,7 @@ export class SignalService {
               if (!tokens.verifyWebhookRoute)
                 return yield* new RemoteTokenError({ message: "Webhook route verification required." });
               webhookRoute = yield* tokens.verifyWebhookRoute(message.webhookRoute, claims.hostId);
-              if (Date.now() < this.#validateWebhookRoutesUntil) {
+              if (this.#issuedBeforeStart(webhookRoute.issuedAt)) {
                 if (!tokens.validateWebhookRoute)
                   return yield* new RemoteTokenError({ message: "Webhook route validation required." });
                 const linked = new Set(yield* tokens.validateWebhookRoute(claims.hostId, webhookRoute.routes));
@@ -1463,7 +1487,7 @@ export class SignalService {
                 return yield* new RemoteTokenError({ message: "Telegram route verification required." });
               const verified = yield* tokens.verifyTelegramRoute(message.telegramRoute, claims.hostId);
               telegramRoute = { chats: verified.chats.filter((chat) => telegram.bot.hasBot(chat.botId)) };
-              if (Date.now() < this.#validateTelegramRoutesUntil && telegramRoute.chats.length > 0) {
+              if (this.#issuedBeforeStart(verified.issuedAt) && telegramRoute.chats.length > 0) {
                 if (!tokens.validateTelegramRoute)
                   return yield* new RemoteTokenError({ message: "Telegram route validation required." });
                 const linked = new Set(
@@ -1635,6 +1659,7 @@ export class SignalService {
             resumeToken,
             iceServers: this.#tokens.iceServers(claims),
           });
+          this.#sendEndedHostSessions(peer);
           yield* this.#restoreWaitingClients(peer);
           return;
         }
@@ -1696,6 +1721,10 @@ export class SignalService {
         });
       }),
   );
+
+  #issuedBeforeStart(issuedAt: number | undefined): boolean {
+    return issuedAt === undefined || issuedAt <= this.#ticketsIssuedBeforeStartUntil;
+  }
 
   #currentHost(hostId: string): AuthenticatedPeer | null {
     let current: AuthenticatedPeer | null = null;
@@ -1893,6 +1922,7 @@ export class SignalService {
   #acceptMessage(socket: SignalSocket, now = Date.now()): boolean {
     const peer = this.#peers.get(socket.id);
     if (peer?.peer === "ingress") return this.#acceptRateKey(`ingress:${socket.id}`, now, INGRESS_RATE_FACTOR);
+    if (peer?.peer === "host") return this.#acceptRateKey(`host:${peer.claims.hostId}`, now, HOST_RATE_FACTOR);
     if (!this.#acceptRateKey(`ip:${socket.ip || socket.id}`, now)) return false;
     return peer ? this.#acceptRateKey(`user:${peer.claims.userId}`, now) : true;
   }
@@ -1921,6 +1951,10 @@ export class SignalService {
     for (const [jti, expiresAt] of this.#usedTicketIds) if (expiresAt <= nowSeconds) this.#usedTicketIds.delete(jti);
     for (const [sessionId, expiresAt] of this.#revokedSessions) {
       if (expiresAt <= nowSeconds) this.#revokedSessions.delete(sessionId);
+    }
+    for (const [hostId, sessions] of this.#endedHostSessions) {
+      for (const [sessionId, expiresAt] of sessions) if (expiresAt <= nowSeconds) sessions.delete(sessionId);
+      if (sessions.size === 0) this.#endedHostSessions.delete(hostId);
     }
   }
 
